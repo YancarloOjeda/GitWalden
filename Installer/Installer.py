@@ -150,12 +150,20 @@ root.config(bg = Fun_Rgb(C_Pal3))
 root.isStopped = False
 
 
-
+#%%-----------FUN SHOW TEXT-------------------------------------------------
 def show_text(icon_msg):
+    """
+    Get a string as parameter and display it in the Text widget 
+    """
     text.insert(INSERT, str(icon_msg)+'\n')
     
     
 def cmd_Next_4():
+    """
+    Save the data.txt file in the current directory
+    The data.txt will be read for the WTS to get all the directories
+    See line 85 to 95 in WTS-2.01.py file
+    """
     global path_file
     dataFile = open(path_file + '/data.txt','w')
     dataFile.write(str(path_file))
@@ -163,19 +171,20 @@ def cmd_Next_4():
     dataFile.write(str(path_file))
     dataFile.close()
     
-    
     os.system('python '+path_file+'/WTS-2.01/Config/WTS-2.01.py')
     root.destroy()
     
 
 def cmd_Next_3():
+    """
+    Upload Python libraries
+    """
     text.delete('1.0', END)
     btnCancel.destroy()
     root.update()
-    
     show_text('\n   Uploading Python libraries')
     
-#%%-----------LIBRARIES LIST-------------------------------------------------
+#######------LIBRARIES LIST------############################################
     PList = ['serial',
               'pyfirmata', 
               'opencv-python',
@@ -183,17 +192,17 @@ def cmd_Next_3():
               'random',
               'matplotlib',
               'time' ]
-#%%-----------FOR WINDOWS-------------------------------------------------
+#######------FOR WINDOWS------##########################################
     # for i in PList:
     #     installPythonPackage = 'pip install ' + i
-    #     # os.system('start cmd /c ' + installPythonPackage)
-    #     time.sleep(1)
-    #     print(i,'...ok')
+    #     os.system('start cmd /c ' + installPythonPackage)
+    #     root.update()
+    #     text.insert(INSERT, '    '+str(i) +'...ok\n')
     
-#%%-----------FOR LINUX-------------------------------------------------
+#######------FOR LINUX------############################################
     for i in PList:
         installPythonPackage = 'pip install ' + i
-        # os.system(installPythonPackage)
+        os.system(installPythonPackage)
         time.sleep(1)
         root.update()
         text.insert(INSERT, '    '+str(i) +'...ok\n')
@@ -205,15 +214,15 @@ def cmd_Next_3():
                                   highlightbackground=Fun_Rgb(C_Pal5),
                                   text = 'Finish', command = cmd_Next_4)
     btnNext.config(font = ("Arial",15))
-    btnNext.place(x=aux_width_monitor*7, y=aux_height_monitor*7)
-    
-       
-        
+    btnNext.place(x=aux_width_monitor*7, y=aux_height_monitor*7)   
     root.update()
 
 
 
 def cmd_Next_2():
+    """
+    Show a message to Upload Python libraries
+    """
     text.delete('1.0', END)
     root.update()
     
@@ -230,19 +239,12 @@ def cmd_Next_2():
                                   text = 'Next', command = cmd_Next_3)
     btnNext.config(font = ("Arial",15))
     btnNext.place(x=aux_width_monitor*7, y=aux_height_monitor*7)
-    
-    # btnCancel = tkinter.Button(root,  bd=0, fg = Fun_Rgb(C_Pal5),
-    #                               bg = Fun_Rgb(C_Pal2), activebackground=Fun_Rgb(C_Pal4),
-    #                               highlightbackground=Fun_Rgb(C_Pal5),
-    #                               text = 'Back', command = cmd_Next)
-    # btnCancel.config(font = ("Arial",15))
-    # btnCancel.place(x=aux_width_monitor*5.5, y=aux_height_monitor*7)
-    
-    
-
 
 
 def cmd_Next():
+    """
+    Download all the files selected by the user and try to unzip it
+    """
     global path_file
     path_file = filedialog.askdirectory(title = "Save Data")
     

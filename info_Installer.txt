@@ -1,0 +1,6 @@
+Información del archivo Installer.py
+Lineas a cambiar para que funcione en Windows:
+- Descomentar de 187-191
+- Comentar 194-199
+
+Ver lineas 263-305, sí el comando wget funciona y el unzip (deberían), ya está listo, sino hay que agregar el comando adecuado para Windows.  
