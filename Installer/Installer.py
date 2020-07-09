@@ -171,9 +171,9 @@ def cmd_Next_4():
     dataFile = open(path_file + '/WTS-2.01/WTS-2.01/Config/data.txt','w')
     dataFile.write(str(path_file))
     dataFile.close()
-    
-    os.system('python '+path_file+'/WTS-2.01/WTS-2.01/Config/WTS-2.01.py')
     root.destroy()
+    os.system('python '+path_file+'/WTS-2.01/WTS-2.01/Config/WTS-2.01.py')
+    
     
 
 def cmd_Next_3():
