@@ -167,11 +167,12 @@ def cmd_Next_4():
     global path_file
     dataFile = open(path_file + '/data.txt','w')
     dataFile.write(str(path_file))
-    dataFile = open(path_file + '/WTS-2.01/Config/data.txt','w')
+    dataFile.close()
+    dataFile = open(path_file + '/WTS-2.01/WTS-2.01/Config/data.txt','w')
     dataFile.write(str(path_file))
     dataFile.close()
     
-    os.system('python '+path_file+'/WTS-2.01/Config/WTS-2.01.py')
+    os.system('python '+path_file+'/WTS-2.01/WTS-2.01/Config/WTS-2.01.py')
     root.destroy()
     
 
@@ -239,6 +240,13 @@ def cmd_Next_2():
                                   text = 'Next', command = cmd_Next_3)
     btnNext.config(font = ("Arial",15))
     btnNext.place(x=aux_width_monitor*7, y=aux_height_monitor*7)
+    
+    btnSkip = tkinter.Button(root,  bd=0, fg = Fun_Rgb(C_Pal5),
+                                  bg = Fun_Rgb(C_Pal2), activebackground=Fun_Rgb(C_Pal4),
+                                  highlightbackground=Fun_Rgb(C_Pal5),
+                                  text = 'Skip', command = cmd_Next_4)
+    btnSkip.config(font = ("Arial",15))
+    btnSkip.place(x=aux_width_monitor*4.5, y=aux_height_monitor*7)
 
 
 def cmd_Next():
@@ -260,11 +268,14 @@ def cmd_Next():
     root.update()
     
     if WTS.get() == 1:
-        os.system('wget -P '+path_file +' http://walden-me.com/Resources/WTS-2.01.zip')
+        os.system('wget -P '+path_file +' https://github.com/YancarloOjeda/WTS-2.01/archive/master.zip')
+        # os.system('wget -P '+path_file +' http://walden-me.com/Resources/WTS-2.01.zip')
         show_text('   Download WTS-2.01\n')
         root.update()
         try:
-            os.system('unzip '+path_file +'/WTS-2.01.zip')
+            os.system('unzip '+path_file +'/master.zip')
+            os.system('mv WTS-2.01-master WTS-2.01')
+            # os.system('unzip '+path_file +'/WTS-2.01.zip')
         except NameError: 
             show_text(NameError)
             
