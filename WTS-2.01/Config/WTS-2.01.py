@@ -219,7 +219,7 @@ def Fun_AbrirVentanaMenuPrincipal1():
         except:
             print('')
             
-    U_Z = 'A0001.WTS.1.01.N9KA-GPXT-WFJC-MPDW'
+#    U_Z = 'A0001.WTS.1.01.N9KA-GPXT-WFJC-MPDW'
     if U_Z == U_Y:
         Fun_AbrirVentanaMenuPrincipal2()        
     else:

@@ -5,12 +5,9 @@ Created on Tue Jun 30 19:19:24 2020
 
 @author: yan
 """
-
-
 import os 
 import time
 
-os.system('start cmd /c tk') 
 #%%-----------LIBRARIES--------------------------------------------------------
 from tkinter import Button, Frame, INSERT, LEFT, RIGHT, Label
 from tkinter import  Scrollbar, Text, Tk, TOP, X, Y, filedialog
@@ -22,8 +19,6 @@ from screeninfo import get_monitors
 import tkinter
 import os 
 import time
-
-
 
 
 #%%-----------COLORS-----------------------------------------------------------
@@ -194,8 +189,10 @@ def cmd_Next_3():
     PList = ['serial',
               'pyfirmata', 
               'opencv-python',
-              'tk',
-              'matplotlib']
+              'python-tk',
+              'random',
+              'matplotlib',
+              'time' ]
 #######------FOR WINDOWS------##########################################
     for i in PList:
          installPythonPackage = 'pip install ' + i
@@ -271,14 +268,14 @@ def cmd_Next():
     root.update()
     
     if WTS.get() == 1:
-        os.system('wget -P '+path_file +' https://github.com/YancarloOjeda/WTS-2.01/archive/master.zip')
-        # os.system('wget -P '+path_file +' http://walden-me.com/Resources/WTS-2.01.zip')
+#        os.system('wget -P '+path_file +' https://github.com/YancarloOjeda/WTS-2.01/archive/master.zip')
+        os.system('wget -P '+path_file +' http://walden-me.com/Resources/WTS-2.01.zip')
         show_text('   Download WTS-2.01\n')
         root.update()
         try:
             os.system('unzip '+path_file +'/master.zip')
             os.system('mv WTS-2.01-master WTS-2.01')
-            # os.system('unzip '+path_file +'/WTS-2.01.zip')
+            os.system('unzip '+path_file +'/WTS-2.01.zip')
         except NameError: 
             show_text(NameError)
             
