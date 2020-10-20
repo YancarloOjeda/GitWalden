@@ -2,14 +2,13 @@ import os
 
 def Lib():
     PList = [
-            'serial',
+            'pyserial',
             'pyfirmata', 
             'opencv-python',
             'tk',
             'matplotlib',
-            'requests',
-            'zipfile'
-              ]
+            'requests'
+            ]
     for i in PList:
          installPythonPackage = 'pip install ' + i
          os.system('start cmd /c ' + installPythonPackage)
@@ -29,7 +28,7 @@ def Download():
     import zipfile
     import shutil
     DList = [
-            'http://walden-me.com/Resources/WTS-2.01.zip'
+            'http://walden-me.com/Resources/WTS-2.01.1.zip'
             ]
     PList_0 = [
             'Config',
@@ -38,6 +37,8 @@ def Download():
             'Projects',
             'Schedules',
             'Videos',
+            'Videos',
+            'WTS-Library'
             ]
     for i in DList:
         try:
