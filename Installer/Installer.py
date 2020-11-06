@@ -5,12 +5,9 @@ Created on Tue Jun 30 19:19:24 2020
 
 @author: yan
 """
-
-
 import os 
 import time
 
-os.system('start cmd /c tk') 
 #%%-----------LIBRARIES--------------------------------------------------------
 from tkinter import Button, Frame, INSERT, LEFT, RIGHT, Label
 from tkinter import  Scrollbar, Text, Tk, TOP, X, Y, filedialog
@@ -22,8 +19,6 @@ from screeninfo import get_monitors
 import tkinter
 import os 
 import time
-
-
 
 
 #%%-----------COLORS-----------------------------------------------------------
