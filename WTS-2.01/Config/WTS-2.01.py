@@ -219,7 +219,7 @@ def Fun_AbrirVentanaMenuPrincipal1():
         except:
             print('')
             
-#    U_Z = 'A0001.WTS.1.01.N9KA-GPXT-WFJC-MPDW'
+    U_Z = 'A0001.WTS.1.01.N9KA-GPXT-WFJC-MPDW'
     if U_Z == U_Y:
         Fun_AbrirVentanaMenuPrincipal2()        
     else:
@@ -232,10 +232,10 @@ def Fun_AbrirVentanaMenuPrincipal2():
     def Fun_Cortar_Video():
         ventanaMenuPrincipal.destroy()
         
-        aux_monitor = 0
-        width_monitor = 1280
-        height_monitor = 800
-        aux_size = .75   
+        # aux_monitor = 0
+        # width_monitor = 1280
+        # height_monitor = 800
+        # aux_size = .75   
         
         aux_width_monitor = width_monitor/15 
         aux_height_monitor = height_monitor/15   

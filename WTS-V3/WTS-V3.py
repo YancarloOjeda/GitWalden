@@ -13,6 +13,9 @@ import os.path
 import numpy as np
 import serial
 import PIL.Image
+import scipy
+import statistics
+import math
 from PIL import Image, ImageTk
 from ast import literal_eval
 from scipy import misc, ndimage
@@ -78,9 +81,25 @@ def Fun_Size(img, size):
     return img         
 #%%Diectories
 Dir_Images = 'Image/'
-Dir_Projects = 'Projects/'
+Dir_ConfigFiles = 'Config/'
 Dir_Videos = 'Videos/'
 Dir_Project_Images = '/Images/'
+Dir_Datos = 'Data/'
+
+if os.path.exists(Dir_ConfigFiles):
+    os.path.exists(Dir_ConfigFiles)
+else:
+    os.mkdir(Dir_ConfigFiles)
+
+if os.path.exists(Dir_Datos):
+    os.path.exists(Dir_Datos)
+else:
+    os.mkdir(Dir_Datos)
+    
+if os.path.exists(Dir_Videos):
+    os.path.exists(Dir_Videos)
+else:
+    os.mkdir(Dir_Videos)
 #%%Global variables
 global var1, Seleccion_Camara, Seleccion_Resolucion, Dev_WebCam_Resolution, Seleccion_Track
 global arr_Color_Cuadro, arr_Color_Cuadro1, arr_Color_Cuadro2 
@@ -94,6 +113,20 @@ Seleccion_Track = 0
 global number_subject, Mat_RGB 
 Mat_RGB = np.zeros((16,6))
 number_subject = 0
+global auxColors, auxColorCircleCanvas, auxColorR, auxColorG, auxColorB
+auxColors = 0
+auxColorR = 255
+auxColorG = 255
+auxColorB = 255
+auxColorCircleCanvas = 0 
+global Lbl_Img_Original, List_Contenido, pathImageProject, textEnt, currentProject, openProjectVar, lblVideo
+currentProject = 0                
+List_Contenido = []
+pathImageProject = ''
+currentPicture = 0
+openProjectVar = 0
+global pathDirectoryTrack
+pathDirectoryTrack = ''
 #%%Windows size
 auxEvaluar = 0
 try:
@@ -292,7 +325,7 @@ def Fun_Change_Camera():
     lblNumberCamera.place(x=aux_width_monitor*12, y=aux_height_monitor*6.2)
     if Seleccion_Camara == 5:
         Seleccion_Camara =  -1           
-#%%FunSetResolution
+#%%FunSetResolution (radiobuttons)
 def FunSetResolution():
     global Seleccion_Resolucion, Dev_WebCam_Resolution
     Seleccion_Resolucion = opcion.get()
@@ -306,6 +339,36 @@ def FunSetResolution():
         Dev_WebCam_Resolution=(800,600)
     elif Dev_WebCam_Resolution == 4:
         Dev_WebCam_Resolution=(1280,800) 
+#%%FunSetResolution
+def FunSetResolutionParameter(Seleccion_Resolucion, Seleccion_Camara):
+    # global Seleccion_Resolucion, Dev_WebCam_Resolution, Seleccion_Camara
+    Dev_WebCam_Resolution = Seleccion_Resolucion
+    
+    Dev_WebCam_Read = cv2.VideoCapture(Seleccion_Camara)
+    if Dev_WebCam_Resolution == 1:
+        Dev_WebCam_Resolution=(320,200)
+    elif Dev_WebCam_Resolution == 2:
+        Dev_WebCam_Resolution=(480,320)
+    elif Dev_WebCam_Resolution == 3:
+        Dev_WebCam_Resolution=(600,480)
+    elif Dev_WebCam_Resolution == 4:
+        Dev_WebCam_Resolution=(800,600)
+    elif Dev_WebCam_Resolution == 5:
+        Dev_WebCam_Resolution=(1280,800)   
+    Dev_WebCam_Read.set(3,Dev_WebCam_Resolution[0])
+    Dev_WebCam_Read.set(4,Dev_WebCam_Resolution[1])
+    
+    
+    # if Dev_WebCam_Resolution == 1:
+    #     Dev_WebCam_Resolution=(480,320)
+    # elif Dev_WebCam_Resolution == 2:
+    #     Dev_WebCam_Resolution=(600,480)
+    # elif Dev_WebCam_Resolution == 3:
+    #     Dev_WebCam_Resolution=(800,600)
+    # elif Dev_WebCam_Resolution == 4:
+    #     Dev_WebCam_Resolution=(1280,800) 
+        
+    return Dev_WebCam_Read
 #%%-------------VIDEO AND IMAGES FUNCTIONS------------- 
 #%%Fun openImage 
 def openImage():
@@ -341,7 +404,7 @@ def setImage():
     
     lblNumberImage.place_forget()
     
-    lblNumberImage = Label(pesCutVideo, text='Image '+str(currentPicture)+ ' of '+str(len(List_Contenido)) +'   ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+    lblNumberImage = Label(pesCutVideo, text='Image '+str(currentPicture+1)+ ' of '+str(len(List_Contenido)) +'   ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
     lblNumberImage.config(font = (Font_1,15))
     lblNumberImage.place(x=aux_width_monitor*1, y=aux_height_monitor*9.1)
        
@@ -405,6 +468,7 @@ def cutVideo():
 #%%Fun Select video  
 def SelectVideo():
     global Dir_Project, var1, rateVideo, pathVideo, Dir_Project_Img
+    
     try:
         pathVideo = filedialog.askopenfilename(initialdir = Dir_Videos,
                                             title = "Select Video",
@@ -419,7 +483,7 @@ def SelectVideo():
         rateVideo.set("Frames per second in the video: " + str(Rate_Video) + " select f/s")
         
         try:
-            pathNewProject = filedialog.asksaveasfilename(initialdir = Dir_Projects,
+            pathNewProject = filedialog.asksaveasfilename(initialdir = Dir_Videos,
                                     title = "Save image project",
                                     filetypes = (("all files","*.*"),
                                     ("jpeg files","*.jpg")))
@@ -444,7 +508,7 @@ def changeImage(x):
     currentPicture += x
     
     if currentPicture >= len(List_Contenido):
-        currentPicture = len(List_Contenido)
+        currentPicture = len(List_Contenido) - 1
     if currentPicture <= 0:
         currentPicture = 0
     
@@ -452,13 +516,12 @@ def changeImage(x):
     milisecond = img.split(Dir_Project_Img)[1]
     lblNumberImage.place_forget()
     
-    lblNumberImage = Label(pesCutVideo, text='Image '+str(currentPicture)+ 
+    lblNumberImage = Label(pesCutVideo, text='Image '+str(currentPicture+1)+ 
                            ' of '+str(len(List_Contenido)) + ' (' + str(milisecond) + ')', 
                            bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
     lblNumberImage.config(font = (Font_1,15))
     lblNumberImage.place(x=aux_width_monitor*1, y=aux_height_monitor*9.1)
         
-    
     Lbl_Img_Original.place_forget()
     Img_Original= PIL.Image.open(img)
     Img_Original_2 = Fun_Image_Rezice(Img_Original)
@@ -741,13 +804,12 @@ def newVideoProject():
     Lbl_Img_Original = tkinter.Label(pesNewProject, image=Photo_Img_Original, bg = Fun_Rgb(C_Primary), bd = 0)
     Lbl_Img_Original.image = Photo_Img_Original
     Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1)
+    
+    updateSeleccionTrackVideo()
 #%%Fun getValuesSliders
 def getValuesSliders(value):
     global Dialog_Video_File_Aux, Lbl_Img_Original, Dialog_Video_File_Aux_2, Img_Original
     global Ruta_Imagen, Seleccion_Track
-    
-    # if Seleccion_Track == 0:
-    #     messagebox.showinfo("Error", "Select a traking option")
     
     X1 = Slider_X1.get()
     X2 = Slider_X2.get()
@@ -838,9 +900,9 @@ def getValuesSliders(value):
         Lbl_Img_Original.image = Pho_Img_Cortable_Aux 
         Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1)
     except:
-        Seleccion_Track = 0
+        pass
    
-    if value == 'a':
+    if value == 'Restart':
         try:
             Lbl_Img_Original.place_forget()
             Img_Original = imageio.imread(Ruta_Imagen)
@@ -858,16 +920,14 @@ def getValuesSliders(value):
             Lbl_Img_Original.image = Photo_Img_Aux 
             Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1)   
         except:
-            Seleccion_Track = 0 
+            pass
 #%%Fun_Next_Subject
 def Fun_Next_Subject(): 
-    
     global number_subject, Mat_RGB, Seleccion_Track
       
     if Seleccion_Track == 0:
         messagebox.showinfo("Error", "Select a traking option")
     
-    aux_count = 0
     Var_R = int(Slider_Rojo.get())
     Var_G = int(Slider_Verde.get())
     Var_B = int(Slider_Azul.get())
@@ -878,7 +938,6 @@ def Fun_Next_Subject():
     
     global Lbl_Img_Original, Lbl_Img_Original_Aux
     Lbl_Img_Original.place_forget()
-    # Lbl_Img_Original_Aux.place_forget()
     
     #Direccion_nueva Imagen
     global Dialog_Video_File_Aux_2
@@ -898,28 +957,30 @@ def Fun_Next_Subject():
     Lbl_Img_Original.image = Photo_Img_Aux 
     Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1) 
     
-    if aux_count == 0:
-        Mat_RGB[number_subject][:]= Mat_RGB2
-        number_subject += 1 
-        
-        Slider_Rojo.set(0)
-        Slider_Verde.set(0)
-        Slider_Azul.set(0)
-        Slider_Desviacion.set(0)
-        Entr_Umbral.set(.5)
-        Var_Filtro.set(0)      
-#%% Fun_Editar_Todas_Imagenes
-def Fun_Editar_Todas_Imagenes():
+    Mat_RGB[number_subject][:]= Mat_RGB2
+    number_subject += 1 
+    
+    Slider_Rojo.set(0)
+    Slider_Verde.set(0)
+    Slider_Azul.set(0)
+    Slider_Desviacion.set(0)
+    Entr_Umbral.set(.5)
+    Var_Filtro.set(0)   
+          
+#%%Fun saveParameters
+def saveParameters():
     global Mat_RGB, number_subject, Dialog_Video_File_Aux_2, Dialog_Video_File_Aux, Ruta_Imagen, Seleccion_Track
     global Dialog_Video_File_Aux, Ruta_Proyecto, Ruta_Video, Carpeta_Imagenes, Ruta_Carpeta_Imagenes, Nombre_Archivo
-    # print( Dialog_Video_File_Aux, Ruta_Proyecto, Ruta_Video, Carpeta_Imagenes, Ruta_Carpeta_Imagenes, Nombre_Archivo)
+    
+    configFileName = entConfigFile.get()
     
     if Seleccion_Track == 0:
         messagebox.showinfo("Error", "Select a traking option")
     
-    if Seleccion_Track == 1:
-        pathProjectImage = Ruta_Proyecto + Nombre_Archivo + '/Images/'
-        pathProject = Ruta_Proyecto + Nombre_Archivo 
+    if configFileName == '':
+        messagebox.showinfo("Info", "Config file name is not assigned")
+    
+    if Seleccion_Track == 1 or Seleccion_Track == 2:
         plt.rcParams['image.cmap'] = 'gray'
         plt.show()
         X1 = Slider_X1.get()
@@ -927,7 +988,9 @@ def Fun_Editar_Todas_Imagenes():
         Y1 = Slider_Y1.get()
         Y2 = Slider_Y2.get()
         Rotar = Slider_Grados_Rotar.get()
-        Dev_Espacio_Tamano = Etr_Tamano_Caja.get()
+        textEntryX = Etr_Tamano_Caja.get()
+        textEntryY = Etr2_Tamano_Caja.get()
+        textEntryZ = Etr3_Tamano_Caja.get()
         Img_Filtro = Var_Filtro.get()
         Track_MinSize = float(Entr_Valor_Minimo_Animal.get())
         Img_Original = imageio.imread(Dialog_Video_File_Aux)
@@ -935,8 +998,11 @@ def Fun_Editar_Todas_Imagenes():
                                     round(Img_Original.shape[1]*X1):round(Img_Original.shape[1]*X2)]
         Img_Original = PIL.Image.open(Dialog_Video_File_Aux).rotate(Rotar)
         Img_WebCam = np.copy(Img_Original)
-        os.remove(Dialog_Video_File_Aux)
-        os.remove(Dialog_Video_File_Aux_2)
+        try:
+            os.remove(Dialog_Video_File_Aux)
+            os.remove(Dialog_Video_File_Aux_2)
+        except:
+            pass
         
         if number_subject == 0:
             Var_R = Slider_Rojo.get()
@@ -946,44 +1012,34 @@ def Fun_Editar_Todas_Imagenes():
             Var_Umbral = float(Entr_Umbral.get())
             Mat_RGB = ([Var_R, Var_G, Var_B, Var_Des, Var_Umbral])
         
-            List_Contenido = ordenarAlfabeticamente(os.listdir(pathProjectImage))
-       
-            #Remplazar Imagenes
-            #con esta sección de código se CORTAN, no editan, todas las imagenés
-            # for elemento in List_Contenido:
-            #     ruta = pathProjectImage
-            #     documento = ruta + elemento
-                
-            #     Img_Original = imageio.imread(documento)
-            #     Img_Original = Img_Original[round(Img_Original.shape[0]*Y1):round(Img_Original.shape[0]*Y2),
-            #                                 round(Img_Original.shape[1]*X1):round(Img_Original.shape[1]*X2)]
-            #     imageio.imsave(documento, Img_Original)
-            #     Img_Original = PIL.Image.open(documento).rotate(Rotar)
-        
-            #     Img_WebCam = np.copy(Img_Original)
-            #     imageio.imsave(documento, Img_WebCam)
-            
             #Guardar txt
             Arr_Variables = [str(Seleccion_Camara), str(Seleccion_Resolucion),
                              str(X1), str(X2), str(Y1), str(Y2), str(Rotar), 
-                             str(Dev_Espacio_Tamano), str(Var_R), str(Var_G), str(Var_B),
+                             str(textEntryX), str(textEntryY), str(textEntryZ), 
+                             str(Var_R), str(Var_G), str(Var_B),
                              str(Var_Des), str(Var_Umbral), str(Img_Filtro), 
                              str(Track_MinSize), 
-                             str(Img_WebCam.shape[1]),str(Img_WebCam.shape[0]), str(number_subject)] 
+                             str(Img_WebCam.shape[1]),str(Img_WebCam.shape[0]), str(number_subject), 
+                             str(Seleccion_Track)] 
             
-            Archivo_Variables = open(pathProject + '/' + 'Config_' + Nombre_Archivo +'.txt','w')
+            Archivo_Variables = open(Dir_ConfigFiles + '/' + configFileName +'.txt','w')
             for i in Arr_Variables:
                 Archivo_Variables.write(i +'\n')
             Archivo_Variables.close()
                 
-            if Seleccion_Track == 1:
-                messagebox.showinfo("Finalized", "Parameters has been saved")
-            elif Seleccion_Track == 2:
-                messagebox.showinfo("Finalized", "Images has been edited")
-            elif Seleccion_Track == 3:
-                messagebox.showinfo("Finalized", "Open Parameters")
+            messagebox.showinfo("Finalized", "Parameters has been saved")
             
         else:
+            Var_R = Slider_Rojo.get()
+            Var_G = Slider_Verde.get()
+            Var_B = Slider_Azul.get()
+            Var_Des = Slider_Desviacion.get()
+            Var_Umbral = float(Entr_Umbral.get())
+            Img_Filtro = Var_Filtro.get()
+            Mat_RGB2 = ([Var_R, Var_G, Var_B, Var_Des, Var_Umbral, Img_Filtro])
+    
+            Mat_RGB[number_subject][:]= Mat_RGB2
+            
             c = 0
             for q in range(len(Mat_RGB)):
                 suma = np.sum(Mat_RGB[c][:], axis=0)
@@ -992,26 +1048,6 @@ def Fun_Editar_Todas_Imagenes():
                     c = c
                 else:
                     c+=1
-            
-            for elemento in List_Contenido:
-                ruta = pathProjectImage
-                documento = ruta + elemento
-                
-                Img_Original = imageio.imread(documento)/255.0
-                Img_Original = Img_Original[round(Img_Original.shape[0]*Y1):round(Img_Original.shape[0]*Y2),
-                                round(Img_Original.shape[1]*X1):round(Img_Original.shape[1]*X2)]
-                imageio.imsave(documento, Img_Original)
-                Img_Original = PIL.Image.open(documento).rotate(Rotar)
-        
-                Img_WebCam = np.copy(Img_Original)
-                imageio.imsave(documento, Img_WebCam)
-            
-            if Seleccion_Track == 1:
-                messagebox.showinfo("Finalized", "Parameters have been saved")
-            elif Seleccion_Track == 2:
-                messagebox.showinfo("Finalized", "Images have been edited")
-            elif Seleccion_Track == 3:
-                messagebox.showinfo("Finalized", "Open Parameters")
             
             #Guardar txt
             Arr_R = np.zeros(c)
@@ -1031,15 +1067,17 @@ def Fun_Editar_Todas_Imagenes():
                 
             Arr_Variables = [str(Seleccion_Camara), str(Seleccion_Resolucion),
                              str(X1), str(X2), str(Y1), str(Y2), str(Rotar), 
-                             str(Dev_Espacio_Tamano), str(Track_MinSize), 
-                             str(Img_WebCam.shape[1]),str(Img_WebCam.shape[0]), str(number_subject)]      
+                             str(textEntryX), str(textEntryY), str(textEntryZ), 
+                             str(Track_MinSize), 
+                             str(Img_WebCam.shape[1]),str(Img_WebCam.shape[0]), 
+                             str(number_subject), str(Seleccion_Track)]  
             
-            Archivo_Variables = open(pathProject + '/' + 'Config_' + Nombre_Archivo +'.txt','w')
+            Archivo_Variables = open(Dir_ConfigFiles + '/' + configFileName +'.txt','w')
             cont_Grabar = 0
             for j in Arr_Variables:
                 Archivo_Variables.write(j +'\n')
                 cont_Grabar += 1
-                if cont_Grabar == 8:
+                if cont_Grabar == 10:
                     for i in range(len(Arr_R)):
                         Archivo_Variables.write(str(Arr_R[i]) +';')
                     Archivo_Variables.write('\n')
@@ -1059,9 +1097,828 @@ def Fun_Editar_Todas_Imagenes():
                         Archivo_Variables.write(str(Arr_Filtro[i]) +';')
                     Archivo_Variables.write('\n')
             
-            Archivo_Variables.close()      
+            Archivo_Variables.close() 
+            messagebox.showinfo("Finalized", "Parameters have been saved")
+#%%-------------TRACKING FUNCTIONS-------------
+#%%Fun putCircleCanvas
+def putCircleCanvas(canShowDataXY, x, y, r, Mat_RGB):
+    global auxColors, auxColorCircleCanvas, auxColorR, auxColorG, auxColorB
+    auxColorCircleCanvas += 1
+    # print(Mat_RGB)
+    # colorRGB = (auxColorR, auxColorG, auxColorB)
+    try:
+        colorRGB = (Mat_RGB[0], Mat_RGB[1], Mat_RGB[2])
+        colorCircleCanvas = Fun_Rgb(colorRGB)
+    except:
+        colorRGB = (int(Mat_RGB[0]), int(Mat_RGB[1]), int(Mat_RGB[2]))
+        colorCircleCanvas = Fun_Rgb(colorRGB)
+    
+    if auxColorCircleCanvas % 2 == 0:
+        auxColorB -= 1
+    else:
+        auxColorG -= 1
+        
+    if auxColorB <= 0 or auxColorG <= 0:
+        auxColorG = 0
+        auxColorB = 0
+     
+    id = canShowDataXY.create_oval(x-r,y-r,x+r,y+r, fill=colorCircleCanvas)
+    # canShowDataXY.create_text(x + r*2, y +r*2,fill="darkblue",font="Times 12 bold",
+    #                     text=str(auxColorCircleCanvas))
+
+    canShowDataXY.update()    
+    return id
+def clearCanvas():
+    canShowDataXY.delete("all")
+#%%Fun openConfigFile
+def openConfigFile():
+    global lblConfigFile, pathConfigFile
+    pathConfigFile = filedialog.askopenfilename(initialdir=Dir_ConfigFiles,
+                                              title="Select Config file",
+                                              filetypes=(("txt files","*.txt"),
+                                              ("all files","*.*")))
+    
+    fileName = pathConfigFile.split('/')
+    auxlen = len(fileName)
+    fileName = fileName[auxlen-1]
+    lblConfigFile.place_forget()
+    lblConfigFile = Label(pesTracking, text='Config: '+str(fileName), bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+    lblConfigFile.config(font = (Font_1,15))
+    lblConfigFile.place(x=aux_width_monitor*5.1, y=aux_height_monitor*1.2)
+    return pathConfigFile 
+#%%Fun openProjectDirectoryToTrack
+def openProjectDirectoryToTrack():
+    global pathDirectoryTrack, lblProjectFile 
+    pathDirectoryTrack = filedialog.askdirectory(initialdir = Dir_Videos,
+                                            title = "Select project")
+    directoryName = pathDirectoryTrack.split('/')
+    auxlen = len(directoryName)
+    directoryName = directoryName[auxlen-1]
+    lblProjectFile.place_forget()
+    lblProjectFile = Label(pesTracking, text='Project: ' + str(directoryName), bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+    lblProjectFile.config(font = (Font_1,15))
+    lblProjectFile.place(x=aux_width_monitor*5.1, y=aux_height_monitor*2.2)
+    return pathDirectoryTrack
+#%%Fun_Distancia
+def Fun_Distancia(x1,x2,y1,y2,DistanciaRelativa):
+    return math.sqrt((x2-x1)**2+(y2-y1)**2)*DistanciaRelativa
+#%%Fun TrackProject
+def TrackProject():
+    global pathConfigFile, pathDirectoryTrack
+    global radBtnSaveVideo, entTime
+    global Mat_Datos_X, Mat_Datos_Y, Mat_Datos_D, Mat_RGB 
+#%%------Get parameters---------
+    try:
+        pathConfigFile
+        fileConfig = open(pathConfigFile, 'r')
+        arrConfig = fileConfig.read().split('\n')
+        fileConfig.close()
+        
+        Seleccion_Camara = int(arrConfig[0])
+        Seleccion_Resolucion = int(arrConfig[1])
+        X1 = float(arrConfig[2])
+        X2 = float(arrConfig[3]) 
+        Y1 = float(arrConfig[4])
+        Y2 = float(arrConfig[5])
+        Rotar = float(arrConfig[6])
+        textEntryX = float(arrConfig[7]) 
+        textEntryY = float(arrConfig[8]) 
+        textEntryZ = float(arrConfig[9]) 
+        Track_MinSize = float(arrConfig[16]) 
+        Img_WebCam1 = int(arrConfig[17])
+        Img_WebCam0 = int(arrConfig[18])
+        number_subject = int(arrConfig[19])
+        Seleccion_Track = int(arrConfig[20])
+        
+        if number_subject == 0:
+            Var_R = int(arrConfig[10])
+            Var_G = int(arrConfig[11]) 
+            Var_B = int(arrConfig[12])
+            Var_Des = int(arrConfig[13]) 
+            Var_Umbral = float(arrConfig[14])
+            Img_Filtro = int(arrConfig[15]) 
+            Mat_RGB = ([Var_R, Var_G, Var_B, Var_Des, Var_Umbral])
+           
+        if number_subject > 0: 
+            Mat_Datos_X = np.zeros((9999999,16))
+            Mat_Datos_Y = np.zeros((9999999,16))
+            Mat_Datos_D = np.zeros((9999999,16))
+    
+            Mat_RGB = np.zeros((number_subject, 5))
+            Img_Filtro = np.zeros((number_subject, 1))
+            aux_1 = 0
+            f = 0
+            for i in arrConfig:
+                b = i
+                aux_1 += 1
+                if aux_1 == 11:
+                    list_aux = b
+                    c = list_aux.split(';')
+                    c = c[:-1]
+                    for e in c:
+                        Mat_RGB[f][0] = e
+                        f += 1
+                    f = 0
+                if aux_1 == 12:
+                    list_aux = b
+                    c = list_aux.split(';')
+                    c = c[:-1]
+                    for e in c:
+                        Mat_RGB[f][1] = e
+                        f += 1
+                    f = 0   
+                if aux_1 == 13:
+                    list_aux = b
+                    c = list_aux.split(';')
+                    c = c[:-1]
+                    for e in c:
+                        Mat_RGB[f][2] = e
+                        f += 1
+                    f = 0
+                if aux_1 == 14:
+                    list_aux = b
+                    c = list_aux.split(';')
+                    c = c[:-1]
+                    for e in c:
+                        Mat_RGB[f][3] = e
+                        f += 1
+                    f = 0
+                if aux_1 == 15:
+                    list_aux = b
+                    c = list_aux.split(';')
+                    c = c[:-1]
+                    for e in c:
+                        Mat_RGB[f][4] = e
+                        f += 1
+                    f = 0
+                if aux_1 == 16:
+                    list_aux = b
+                    c = list_aux.split(';')
+                    c = c[:-1]
+                    for e in c:
+                        Img_Filtro[f][0] = e
+                        f += 1
+                    f = 0
+        timeSession = entTime.get()
+        subject = entSubject.get()
+        session = entSession.get()
+        group = entGroup.get()
+        sessionName = entSessionName.get()
+        saveVideo = Var_SaveVideo.get()
+        
+        if saveVideo != 1:
+            saveVideo = 0
+        
+        Int_Contador = 1
+        Int_Datos_Consecuencia = 0
+        Int_Contador_Distancia = 0
+        Arr_TiempoReal = np.zeros(4)
+        Mat_Datos = np.zeros((9999999,6+(number_subject*2)))
+    
+        LblAxisX = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg=Fun_Rgb(C_White), text='Axis X = '+str(textEntryX))
+        LblAxisX.config(font = (Font_1,12))
+        LblAxisX.place(x=aux_width_monitor*10.5, y = aux_height_monitor*6.5)
+        
+        LblAxisY = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg=Fun_Rgb(C_White), text='Axis Y = '+str(textEntryY))
+        LblAxisY.config(font = (Font_1,12))
+        LblAxisY.place(x=aux_width_monitor*13.5, y = aux_height_monitor*3)
+       
+    except NameError:
+        messagebox.showerror("Error", "Config file not found") 
+    
+#%%---- 1.- Image project from cut video     
+    if Seleccion_Track == 1 and pathDirectoryTrack != '':
+        List_Contenido = ordenarAlfabeticamente(os.listdir(pathDirectoryTrack+'/Images/'))
+#%%---- 1.1- Image project from cut video with only one subject   
+        if number_subject == 0:
+            for elemento in List_Contenido:
+                ruta = pathDirectoryTrack + '/Images/'
+                documento = ruta + elemento
+                
+                Img_Original = imageio.imread(documento)
+                Img_Original = Img_Original[round(Img_Original.shape[0]*Y1):round(Img_Original.shape[0]*Y2),
+                                            round(Img_Original.shape[1]*X1):round(Img_Original.shape[1]*X2)]
+                Img_Original = PIL.Image.open(documento).rotate(Rotar)
+                Img_WebCam = np.copy(Img_Original)
+                Img_WebCam = changeColorAndFilter(Img_WebCam, Mat_RGB, Img_Filtro)
+                    
+                try:
+                    Mat_Centroide = ndimage.label(Img_WebCam)[0]
+                    Centroide = scipy.ndimage.measurements.center_of_mass(Img_WebCam, Mat_Centroide, [1])
+                    Mat_Size = ndimage.label(Img_WebCam)[0]
+                    Size = np.sqrt(scipy.ndimage.measurements.sum(Img_WebCam, Mat_Size, [1]))
+                    MinSize = int(np.where(Size == np.min(Size[(Size >= Track_MinSize)]))[0])
+                    cv2.circle(Img_WebCam,(int(Centroide[MinSize][1]),int(Centroide[MinSize][0])),2,(0,0,255),5)
+                except:
+                    Img_WebCam = Img_WebCam
+                    
+                Img_WebCam = cv2.resize(Img_WebCam,(round(aux_width_monitor*4), round(aux_height_monitor*4))) #round((400/Img_WebCam.shape[1])*Img_WebCam.shape[1])))
+                cv2.putText(Img_WebCam,'T: ',(5,15),Font_CV, .5,(255,255,255),1)
+                cv2.putText(Img_WebCam,str(round(Mat_Datos[Int_Contador-1][0] ,2)),(20,15),Font_CV, .5,(255,255,255),1)
+                cv2.imshow('Tracking',Img_WebCam)
+                cv2.moveWindow('Tracking', 90,220);
+                cv2.waitKey(5)
+                
+                Mat_Datos[Int_Contador][0] = int(elemento.replace('.jpg',''))  
+                try:
+                    Mat_Datos[Int_Contador][1] = int(Centroide[MinSize][1])
+                    Mat_Datos[Int_Contador][2] = int(Centroide[MinSize][0])
+                except:
+                    Mat_Datos[Int_Contador][1] = Mat_Datos[Int_Contador-1][1]
+                    Mat_Datos[Int_Contador][2] = Mat_Datos[Int_Contador-1][2]
+                Mat_Datos[Int_Contador][4] = Int_Datos_Consecuencia
+                Mat_Datos[Int_Contador][3] = (Fun_Distancia(Mat_Datos[Int_Contador-1][1],Mat_Datos[Int_Contador][1],Mat_Datos[Int_Contador-1][2],Mat_Datos[Int_Contador][2],textEntryX/Img_WebCam1))
+                
+                X_ = (Mat_Datos[Int_Contador][1]*100)/Img_WebCam1
+                X_ = (aux_height_monitor*5)*(X_*.01)
+                
+                Y_ = (Mat_Datos[Int_Contador][2]*100)/Img_WebCam0
+                Y_ = (aux_height_monitor*5)*(Y_*.01)
+                putCircleCanvas(canShowDataXY, X_, Y_,5,Mat_RGB)
+                Int_Contador += 1 
+                
+            cv2.destroyAllWindows()
+            
+            Mat_Datos = np.delete(Mat_Datos,np.where(Mat_Datos[:,1] == 0), axis=0) 
+            Mat_Datos[0,3] = 0
+            Mat_Datos[0,5] = 0
+                                              
+            i = 1
+            Archivo_Mat_Datos = open(Dir_Datos + sessionName + '.txt','w')
+            Archivo_Mat_Datos.write('Subject: ' + subject + '\n' +
+                                    'Session: ' + session + '\n' +
+                                    'Group: ' + group + '\n' +
+                                    'Time: '+ str(round(max(Mat_Datos[:,0]),3)) + '\n' +
+                                    'Consecuences: ' + str(np.size(np.where(Mat_Datos[:,4] == 1))) + '\n' +
+                                    'Distance: ' + str(round(sum(Mat_Datos[:,3]),3)) + 'cm' + '\n' +
+                                    'Velocity: ' + str(round(sum(Mat_Datos[:,3])/max(Mat_Datos[:,0]),3)) + 'cm/seg' + '\n' +
+                                    '\n' + 'Frame;Time;X;Y;Aceleration;Distance;Consecuences' + '\n')
+            for i in range(0,len(Mat_Datos)): 
+                Archivo_Mat_Datos.write(str(i) + ',' + str(round(Mat_Datos[i][0],3)) +
+                                                 ',' + str(round(Mat_Datos[i][1] * (textEntryX/Img_WebCam1),3)) +
+                                                 ',' + str(round(Mat_Datos[i][2] * (textEntryY/Img_WebCam0),3)) +
+                                                 ',' + str(round(Mat_Datos[i][3],3)) +
+                                                 ',' + str(Mat_Datos[i][4]) + '\n')
+            Archivo_Mat_Datos.close() 
+            messagebox.showinfo("Finalized", "Video has been traked")
+#%%---- 1.2- Image project from cut video with more than one subject         
+        else:
+            for elemento in List_Contenido:
+                ruta = pathDirectoryTrack + '/Images/'
+                documento = ruta + elemento
+                
+                Img_Original = imageio.imread(documento)
+                Img_Original = Img_Original[round(Img_Original.shape[0]*Y1):round(Img_Original.shape[0]*Y2),
+                                            round(Img_Original.shape[1]*X1):round(Img_Original.shape[1]*X2)]
+                Img_Original = PIL.Image.open(documento).rotate(Rotar)
+                Img_WebCam = np.copy(Img_Original)
+                
+                image_total= np.zeros((Img_WebCam.shape))
+                
+                i=0
+                for i in range(number_subject):
+                    image_aux = np.zeros((Img_WebCam.shape))
+                    image_aux[(np.where((Img_WebCam[:,:,0]>=(Mat_RGB[i][0]-Mat_RGB[i][3])) & (Img_WebCam[:,:,0]<=(Mat_RGB[i][0]+Mat_RGB[i][3])))[0]),
+                              (np.where((Img_WebCam[:,:,0]>=(Mat_RGB[i][0]-Mat_RGB[i][3])) & (Img_WebCam[:,:,0]<=(Mat_RGB[i][0]+Mat_RGB[i][3])))[1]),0] = 1
+                    image_aux[(np.where((Img_WebCam[:,:,1]>=(Mat_RGB[i][1]-Mat_RGB[i][3])) & (Img_WebCam[:,:,1]<=(Mat_RGB[i][1]+Mat_RGB[i][3])))[0]),
+                              (np.where((Img_WebCam[:,:,1]>=(Mat_RGB[i][1]-Mat_RGB[i][3])) & (Img_WebCam[:,:,1]<=(Mat_RGB[i][1]+Mat_RGB[i][3])))[1]),1] = 1
+                    image_aux[(np.where((Img_WebCam[:,:,2]>=(Mat_RGB[i][2]-Mat_RGB[i][3])) & (Img_WebCam[:,:,2]<=(Mat_RGB[i][2]+Mat_RGB[i][3])))[0]),
+                              (np.where((Img_WebCam[:,:,2]>=(Mat_RGB[i][2]-Mat_RGB[i][3])) & (Img_WebCam[:,:,2]<=(Mat_RGB[i][2]+Mat_RGB[i][3])))[1]),2] = 1
+        
+                    if Img_Filtro[i][0]==1:
+                        image_aux = ndimage.gaussian_filter(image_aux, sigma=3)
+                    elif Img_Filtro[i][0]==2:
+                        image_aux = ndimage.gaussian_filter(image_aux, sigma=5)
+                    elif Img_Filtro[i][0]==3:
+                        image_aux =ndimage.uniform_filter(image_aux, size=2)
+                    elif Img_Filtro[i][0]==4:
+                        image_aux =ndimage.uniform_filter(image_aux, size=11)
+                    elif Img_Filtro[i][0]==5:
+                        image_aux = image_aux
+                    np.place(image_aux[:,:,:], image_aux[:,:,:]>=Mat_RGB[i][4], 1)
+                    np.place(image_aux[:,:,:], image_aux[:,:,:]<Mat_RGB[i][4], 0)
+                    
+                    try:
+                        Mat_Centroide = ndimage.label(image_aux)[0]
+                        Centroide = scipy.ndimage.measurements.center_of_mass(image_aux, Mat_Centroide, [1,2,3])
+                        Mat_Size = ndimage.label(image_aux)[0]
+                        Size = np.sqrt(scipy.ndimage.measurements.sum(image_aux, Mat_Size, [1,2,3]))
+                        MinSize = int(np.where(Size == np.min(Size[(Size >= Track_MinSize)]))[0])
+                        cv2.circle(image_aux,(int(Centroide[MinSize][1]),int(Centroide[MinSize][0])),2,(0,0,255),5)
+                    except:
+                        image_aux = image_aux
+                    
+                    try:
+                        Mat_Datos_X[Int_Contador][i] = int(Centroide[MinSize][1])
+                        Mat_Datos_Y[Int_Contador][i] = int(Centroide[MinSize][0])
+                    except:
+                        Mat_Datos_X[Int_Contador][i] = Mat_Datos_X[Int_Contador-1][i]
+                        Mat_Datos_Y[Int_Contador][i] = Mat_Datos_Y[Int_Contador-1][i]
+                    Mat_Datos_D[Int_Contador][i] = (Fun_Distancia(Mat_Datos_X[Int_Contador-1][i],Mat_Datos_X[Int_Contador][i],Mat_Datos_Y[Int_Contador-1][i],Mat_Datos_Y[Int_Contador][i],textEntryX/Img_WebCam1))    
+                    
+                    X_ = (Mat_Datos_X[Int_Contador][i]*100)/Img_WebCam1
+                    X_ = (aux_height_monitor*5)*(X_*.01)
+                    
+                    Y_ = (Mat_Datos_Y[Int_Contador][i]*100)/Img_WebCam0
+                    Y_ = (aux_height_monitor*5)*(Y_*.01)
+                    putCircleCanvas(canShowDataXY, X_, Y_,5, Mat_RGB[i][:])
+                      
+                    image_total += image_aux
+                    if i == number_subject -1:
+                        j = 0
+                        for j in range(number_subject):
+                            cv2.putText(image_total,str(j+1),(int(Mat_Datos_X[Int_Contador][j])+10,int(Mat_Datos_Y[Int_Contador][j])),Font_CV, .5,(0,0,255),1)
+                        image_total = cv2.resize(image_total,(round(aux_width_monitor*4), round(aux_height_monitor*4))) 
+                        cv2.putText(image_total,'T: ',(5,15),Font_CV, .5,(255,255,255),1)
+                        cv2.putText(image_total,str(round(Mat_Datos[Int_Contador-1][0] ,2)),(20,15),Font_CV, .5,(255,255,255),1)
+                        cv2.imshow('Tracking',image_total)
+                        cv2.moveWindow('Tracking', 90,220);
+                        cv2.waitKey(5)
+                    
+                    # Mat_Datos[Int_Contador][0] = (int(elemento.replace('image_','').replace('.jpg',''))/int(Int_Frame_2)) * float(Int_Frame)     
+                    Mat_Datos[Int_Contador][0] = int(elemento.replace('.jpg',''))
+                Mat_Datos[Int_Contador][4] = Int_Datos_Consecuencia
+                
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break  
+                
+                Int_Contador += 1   
+                
+            cv2.destroyAllWindows()
+            
+            Mat_Datos = np.delete(Mat_Datos,np.where(Mat_Datos[:,0] == 0), axis=0)
+            Mat_Datos_X = Mat_Datos_X[0:len(Mat_Datos),:]
+            Mat_Datos_Y = Mat_Datos_Y[0:len(Mat_Datos),:]
+            Mat_Datos_D = Mat_Datos_D[0:len(Mat_Datos),:]
+              
+            j = 0
+            for j in range(number_subject):
+                Archivo_Mat_Datos = open(Dir_Datos + sessionName + '_' + str(j+1) + '.txt','w')
+                Archivo_Mat_Datos.write('Subject: ' + subject + '_' + str(j+1) +'\n' +
+                                        'Session: ' + session + '\n' +
+                                        'Group: ' + group + '\n' +
+                                        'Time: '+ str(round(max(Mat_Datos[:,0]),3)) + '\n' +
+                                        'Consecuences: ' + str(np.size(np.where(Mat_Datos[:,4] == 1))) + '\n' +
+                                        'Distance: ' + str(round(sum(Mat_Datos_D[:,j]),3)) + 'cm' + '\n' +
+                                        'Velocity: ' + str(round(sum((Mat_Datos_D[:,j]/100)/Mat_Datos[:,0]),3)) + 'cm/seg' + '\n' +
+                                        '\n' + 'Frame;Time;X;Y;Distance;Consecuences' + '\n')
+                i = 1
+                for i in range(0,len(Mat_Datos)): 
+                    Archivo_Mat_Datos.write(str(i) + ',' + str(round(Mat_Datos[i][0],3)) +
+                                                     ',' + str(round(Mat_Datos_X[i][j] * (textEntryX/Img_WebCam1),3)) +
+                                                     ',' + str(round(Mat_Datos_Y[i][j] * (textEntryY/Img_WebCam0),3)) +
+                                                     ',' + str(round(Mat_Datos_D[i][j],3)) +
+                                                     ',' + str(Mat_Datos[i][4]) + '\n')
+                Archivo_Mat_Datos.close()
+            messagebox.showinfo("Finalized", "Sesion has been traked")    
+#%%---- 2.-Live project (from camera) 
+    elif (Seleccion_Track == 1 or Seleccion_Track == 2) and pathDirectoryTrack == '':
+        Mat_Datos[:,0] = -1
+        
+        Dev_WebCam_Resolution = Seleccion_Resolucion
+        Dev_WebCam_Resolution = 3
+        Dev_WebCam_Read = cv2.VideoCapture(Seleccion_Camara) 
+        if Dev_WebCam_Resolution == 1:
+            Dev_WebCam_Resolution=(320,200)
+        elif Dev_WebCam_Resolution == 2:
+            Dev_WebCam_Resolution=(480,320)
+        elif Dev_WebCam_Resolution == 3:
+            Dev_WebCam_Resolution=(640,480)
+        elif Dev_WebCam_Resolution == 4:
+            Dev_WebCam_Resolution=(800,600)
+        elif Dev_WebCam_Resolution == 5:
+            Dev_WebCam_Resolution=(1280,800)   
+        Dev_WebCam_Read.set(3,Dev_WebCam_Resolution[0])
+        Dev_WebCam_Read.set(4,Dev_WebCam_Resolution[1])
+        
+        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+        out = cv2.VideoWriter(Dir_Videos + sessionName + '.mp4',fourcc, 30.0, (640,480))
+#%%---- 2.1-Live project (from camera) only one subject 
+        if number_subject == 0:
+            Arr_TiempoReal[0]=time.time()
+            while(int(timeSession) >= Arr_TiempoReal[3]):
+                ret, Img_WebCam = Dev_WebCam_Read.read()
+                
+                if ret==True and saveVideo == 1:
+                    out.write(Img_WebCam)
+                    
+                num_rows, num_cols = Img_WebCam.shape[:2]
+                Mat_Img_Rotada = cv2.getRotationMatrix2D((num_cols/2, num_rows/2), Rotar, 1)
+                Img_WebCam  = cv2.warpAffine(Img_WebCam, Mat_Img_Rotada, (num_cols, num_rows))
+                Img_WebCam = Img_WebCam[round(Img_WebCam.shape[0]*Y1):round(Img_WebCam.shape[0]*Y2),
+                                round(Img_WebCam.shape[1]*X1):round(Img_WebCam.shape[1]*X2)]
+                
+                Mat_WebCam_RGB = np.zeros((Img_WebCam.shape))
+                Mat_WebCam_RGB[(np.where((Img_WebCam[:,:,2]>=(Mat_RGB[0]-Mat_RGB[3])) & (Img_WebCam[:,:,2]<=(Mat_RGB[0]+Mat_RGB[3])))[0]),
+                                (np.where((Img_WebCam[:,:,2]>=(Mat_RGB[0]-Mat_RGB[3])) & (Img_WebCam[:,:,2]<=(Mat_RGB[0]+Mat_RGB[3])))[1]),0] = 1
+                Mat_WebCam_RGB[(np.where((Img_WebCam[:,:,1]>=(Mat_RGB[1]-Mat_RGB[3])) & (Img_WebCam[:,:,1]<=(Mat_RGB[1]+Mat_RGB[3])))[0]),
+                                (np.where((Img_WebCam[:,:,1]>=(Mat_RGB[1]-Mat_RGB[3])) & (Img_WebCam[:,:,1]<=(Mat_RGB[1]+Mat_RGB[3])))[1]),1] = 1
+                Mat_WebCam_RGB[(np.where((Img_WebCam[:,:,0]>=(Mat_RGB[2]-Mat_RGB[3])) & (Img_WebCam[:,:,0]<=(Mat_RGB[2]+Mat_RGB[3])))[0]),
+                                (np.where((Img_WebCam[:,:,0]>=(Mat_RGB[2]-Mat_RGB[3])) & (Img_WebCam[:,:,0]<=(Mat_RGB[2]+Mat_RGB[3])))[1]),2] = 1          
+                Img_WebCam = Mat_WebCam_RGB  
+                       
+                if Img_Filtro==1:
+                    Img_WebCam = ndimage.gaussian_filter(Img_WebCam, sigma=3)
+                elif Img_Filtro==2:
+                    Img_WebCam = ndimage.gaussian_filter(Img_WebCam, sigma=5)
+                elif Img_Filtro==3:
+                    Img_WebCam =ndimage.uniform_filter(Img_WebCam, size=2)
+                elif Img_Filtro==4:
+                    Img_WebCam =ndimage.uniform_filter(Img_WebCam, size=11)
+                np.place(Img_WebCam[:,:,:], Img_WebCam[:,:,:]>=Mat_RGB[4], 1)
+                np.place(Img_WebCam[:,:,:], Img_WebCam[:,:,:]<Mat_RGB[4], 0)
+                
+                try:
+                    Mat_Centroide = ndimage.label(Img_WebCam)[0]
+                    Centroide = scipy.ndimage.measurements.center_of_mass(Img_WebCam, Mat_Centroide, [1,2,3])
+                    Mat_Size = ndimage.label(Img_WebCam)[0]
+                    Size = np.sqrt(scipy.ndimage.measurements.sum(Img_WebCam, Mat_Size, [1,2,3]))
+                    MinSize = int(np.where(Size == np.min(Size[(Size >= Track_MinSize)]))[0])
+                    cv2.circle(Img_WebCam,(int(Centroide[MinSize][1]),int(Centroide[MinSize][0])),2,(0,0,255),5)
+                except:
+                    Img_WebCam = Img_WebCam
+            
+                Img_WebCam = cv2.resize(Img_WebCam,(round(aux_width_monitor*4), round(aux_height_monitor*4)))#(400, round((400/Img_WebCam.shape[1])*Img_WebCam.shape[1])))
+                cv2.putText(Img_WebCam,'Time: ',(5,15),Font_CV, .5,(255,255,255),1)
+                cv2.putText(Img_WebCam,str(round((Arr_TiempoReal[3]) ,2)),(65,15),Font_CV, .5,(255,255,255),1)
+                cv2.putText(Img_WebCam,'D: ',(5,35),Font_CV, .5,(255,255,255),1)
+                cv2.putText(Img_WebCam,str(round(Int_Contador_Distancia ,2)),(20,35),Font_CV, .5,(255,255,255),1)
+                cv2.imshow('Tracking',Img_WebCam)
+                cv2.moveWindow('Tracking', 90,220);
+                
+                Mat_Datos[Int_Contador][0] = Arr_TiempoReal[3]
+                try:
+                    Mat_Datos[Int_Contador][1] = int(Centroide[MinSize][1])
+                    Mat_Datos[Int_Contador][2] = int(Centroide[MinSize][0])
+                except:
+                    Mat_Datos[Int_Contador][1] = Mat_Datos[Int_Contador-1][1]
+                    Mat_Datos[Int_Contador][2] = Mat_Datos[Int_Contador-1][2]
+                Mat_Datos[Int_Contador][3] = (Fun_Distancia(Mat_Datos[Int_Contador-1][1],Mat_Datos[Int_Contador][1],Mat_Datos[Int_Contador-1][2],Mat_Datos[Int_Contador][2],textEntryX/Img_WebCam1))
+                Mat_Datos[Int_Contador][4] = Int_Datos_Consecuencia
+                Int_Contador_Distancia += Mat_Datos[Int_Contador][3]
+                X_ = (Mat_Datos[Int_Contador][1]*100)/Img_WebCam1
+                X_ = (aux_height_monitor*5)*(X_*.01)
+                
+                Y_ = (Mat_Datos[Int_Contador][2]*100)/Img_WebCam0
+                Y_ = (aux_height_monitor*5)*(Y_*.01)
+                putCircleCanvas(canShowDataXY, X_, Y_,5, Mat_RGB)
+                Int_Contador += 1          
+    
+                Arr_TiempoReal[1]=time.time()
+                Arr_TiempoReal[2]=Arr_TiempoReal[1]-Arr_TiempoReal[0] 
+                Arr_TiempoReal[3]+= Arr_TiempoReal[2]
+                Mat_Datos[Int_Contador-1][5] = (Mat_Datos[Int_Contador-1][3]/100) / Arr_TiempoReal[2]
+                
+                Arr_TiempoReal[0]=time.time()
+                
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+               
+            Dev_WebCam_Read.release()
+            cv2.destroyAllWindows()
+            if saveVideo == 1:
+                out.release()
+       
+            Mat_Datos = np.delete(Mat_Datos,np.where(Mat_Datos[:,0] == -1), axis=0)
+            Mat_Datos[0,3] = 0
+            Mat_Datos[0,5] = 0
+            
+            #Frames Datos
+            Select_Frames_Number = messagebox.askyesno("Change frames","Would you like to change the default frames?")
+            
+            if Select_Frames_Number == True: 
+                Number_Frames_ask = askstring('Frames per sec.', 'Insert the number of frames')
+                Number_Frames = int(Number_Frames_ask)
+                try:
+                    Final_Values = []
+                    i = 1
+                    for i in range(1,int(round(max(Mat_Datos[:,0])))+1):
+                        Temp_C = []
+                        Temp_P = []
+                        Temp_R = []
+                        Temp_values = Mat_Datos[np.where((Mat_Datos[:,0] < i) & (Mat_Datos[:,0] > i-1) ),:]
+                        Temp_values2 = Mat_Datos[np.where((Mat_Datos[:,0] < i) & (Mat_Datos[:,0] > i-1) ),:]
+                        Temp_value_Size = Temp_values[0,:,0].size
+                        Frame_range = math.floor(Temp_value_Size / Number_Frames)
+                        if np.sum(Temp_values[:,:,4]) > 0:
+                            Temp_P = np.arange(0, (Frame_range * Number_Frames)-1, Frame_range)
+                            Temp_C = np.where(Temp_values[:,:,4] == 1)[1]
+                            Temp_R = np.where(Temp_P[:] == Temp_C[0])[0]
+                            try:
+                                if int(Temp_R[0]) >= 0:
+                                    for i in range(0,Number_Frames-1):
+                                        Temp_values[0,i,0] = Temp_values[0,int(Temp_P[i]),0]
+                                    Temp_values = Temp_values[0,:Number_Frames,0]
+                            except:
+                                for i in range(0,Number_Frames-1):
+                                    Temp_values[0,i,0] = Temp_values[0,int(Temp_P[i]),0]
+                                Temp_values = Temp_values[0,:Number_Frames,0]
+                                Temp_values[Number_Frames-1] = Temp_values2[0,Temp_C[0],0]
+                                Temp_values= np.sort(Temp_values)
+                                    
+                        else:
+                            Temp_P = np.arange(0, (Frame_range * Number_Frames)-1, Frame_range)
+                            for i in range(0,Number_Frames):
+                                Temp_values[0,i,0] = Temp_values[0,int(Temp_P[i]),0]
+                            Temp_values = Temp_values[0,:Number_Frames,0]
+                        Final_Values = np.hstack((Final_Values,Temp_values))    
+                    i = 0
+                    Mat_Datos_N = np.zeros((len(Final_Values),7))
+                    for i in range(0,len(Final_Values)):
+                        Temp_Data = Mat_Datos[np.where( (Mat_Datos[:,0] == Final_Values[i])),:]
+                        Mat_Datos_N[i,:] = Temp_Data[0,:]
+                    Mat_Datos = Mat_Datos_N
+                except:
+                    messagebox.showinfo("Error", "Not enough frames")   
+                      
+            #Datos_Generales
+            Archivo_Mat_Datos = open(Dir_Datos + sessionName + '.txt','w')
+            Archivo_Mat_Datos.write('Subject: ' + subject + '\n' +
+                                    'Session: ' + session + '\n' +
+                                    'Group: ' + group + '\n' +
+                                    'Time: '+ str(max(Mat_Datos[:,0])) + '\n' +
+                                    'Consecuences: ' + str(np.size(np.where(Mat_Datos[:,4] == 1))) + '\n' +
+                                    'Distance: ' + str(round(sum(Mat_Datos[:,3]),3)) + 'cm' + '\n' +
+                                    'Velocity: ' + str(round(sum(Mat_Datos[:,3])/max(Mat_Datos[:,0]),3)) + 'cm/seg' + '\n' +
+                                    '\n' + 'Frame;Time;X;Y;Distance;Consecuences' + '\n')
+            i = 1
+            for i in range(0,len(Mat_Datos)): 
+                Archivo_Mat_Datos.write(str(i) +   ',' + str(round(Mat_Datos[i][0],3)) +
+                                                   ',' + str(round(Mat_Datos[i][1] * (textEntryX/Img_WebCam1),3)) +
+                                                   ',' + str(round(Mat_Datos[i][2] * (textEntryY/Img_WebCam0),3)) +
+                                                   ',' + str(round(Mat_Datos[i][3],3)) +
+                                                   ',' + str(Mat_Datos[i][4]) + '\n')
+            Archivo_Mat_Datos.close() 
+            messagebox.showinfo("Finalized", "Session has been traked")
+#%%---- 2.2-Live project (from camera) more than one subject 
+        else:
+            Mat_Datos_X = np.zeros((9999999,16))
+            Mat_Datos_Y = np.zeros((9999999,16))
+            Mat_Datos_D = np.zeros((9999999,16))
+            
+            Arr_TiempoReal[0]=time.time()
+                            
+            while(int(timeSession) >= Arr_TiempoReal[3]):                
+                ret, Img_WebCam = Dev_WebCam_Read.read()
+                
+                if ret==True and saveVideo == 1:
+                    out.write(Img_WebCam)
+                    
+                num_rows, num_cols = Img_WebCam.shape[:2]
+                Mat_Img_Rotada = cv2.getRotationMatrix2D((num_cols/2, num_rows/2), Rotar, 1)
+                Img_WebCam  = cv2.warpAffine(Img_WebCam, Mat_Img_Rotada, (num_cols, num_rows))
+                Img_WebCam = Img_WebCam[round(Img_WebCam.shape[0]*Y1):round(Img_WebCam.shape[0]*Y2),
+                                round(Img_WebCam.shape[1]*X1):round(Img_WebCam.shape[1]*X2)]
+                
+                image_total= np.zeros((Img_WebCam.shape))
+                
+                i=0
+                for i in range(number_subject):
+                    image_aux = np.zeros((Img_WebCam.shape))
+                    image_aux[(np.where((Img_WebCam[:,:,2]>=(Mat_RGB[i][0]-Mat_RGB[i][3])) & (Img_WebCam[:,:,2]<=(Mat_RGB[i][0]+Mat_RGB[i][3])))[0]),
+                              (np.where((Img_WebCam[:,:,2]>=(Mat_RGB[i][0]-Mat_RGB[i][3])) & (Img_WebCam[:,:,2]<=(Mat_RGB[i][0]+Mat_RGB[i][3])))[1]),0] = 1
+                    image_aux[(np.where((Img_WebCam[:,:,1]>=(Mat_RGB[i][1]-Mat_RGB[i][3])) & (Img_WebCam[:,:,1]<=(Mat_RGB[i][1]+Mat_RGB[i][3])))[0]),
+                              (np.where((Img_WebCam[:,:,1]>=(Mat_RGB[i][1]-Mat_RGB[i][3])) & (Img_WebCam[:,:,1]<=(Mat_RGB[i][1]+Mat_RGB[i][3])))[1]),1] = 1
+                    image_aux[(np.where((Img_WebCam[:,:,0]>=(Mat_RGB[i][2]-Mat_RGB[i][3])) & (Img_WebCam[:,:,0]<=(Mat_RGB[i][2]+Mat_RGB[i][3])))[0]),
+                              (np.where((Img_WebCam[:,:,0]>=(Mat_RGB[i][2]-Mat_RGB[i][3])) & (Img_WebCam[:,:,0]<=(Mat_RGB[i][2]+Mat_RGB[i][3])))[1]),2] = 1
+                            
+                    if Img_Filtro[i][0]==1:
+                        image_aux = ndimage.gaussian_filter(image_aux, sigma=3)
+                    elif Img_Filtro[i][0]==2:
+                        image_aux = ndimage.gaussian_filter(image_aux, sigma=5)
+                    elif Img_Filtro[i][0]==3:
+                        image_aux =ndimage.uniform_filter(image_aux, size=2)
+                    elif Img_Filtro[i][0]==4:
+                        image_aux =ndimage.uniform_filter(image_aux, size=11)
+                    elif Img_Filtro[i][0]==5:
+                        image_aux = image_aux
+                    np.place(image_aux[:,:,:], image_aux[:,:,:]>=Mat_RGB[i][4], 1)
+                    np.place(image_aux[:,:,:], image_aux[:,:,:]<Mat_RGB[i][4], 0)
+                    
+                    try:
+                        Mat_Centroide = ndimage.label(image_aux)[0]
+                        Centroide = scipy.ndimage.measurements.center_of_mass(image_aux, Mat_Centroide, [1,2,3])
+                        Mat_Size = ndimage.label(image_aux)[0]
+                        Size = np.sqrt(scipy.ndimage.measurements.sum(image_aux, Mat_Size, [1,2,3]))
+                        MinSize = int(np.where(Size == np.min(Size[(Size >= Track_MinSize)]))[0])
+                        cv2.circle(image_aux,(int(Centroide[MinSize][1]),int(Centroide[MinSize][0])),2,(0,0,255),5)
+                    except:
+                        image_aux = image_aux
+                           
+                    try:
+                        Mat_Datos_X[Int_Contador][i] = int(Centroide[MinSize][1])
+                        Mat_Datos_Y[Int_Contador][i] = int(Centroide[MinSize][0])
+                    except:
+                        Mat_Datos_X[Int_Contador][i] = Mat_Datos_X[Int_Contador-1][i]
+                        Mat_Datos_Y[Int_Contador][i] = Mat_Datos_Y[Int_Contador-1][i]
+                    Mat_Datos_D[Int_Contador][i] = (Fun_Distancia(Mat_Datos_X[Int_Contador-1][i],Mat_Datos_X[Int_Contador][i],Mat_Datos_Y[Int_Contador-1][i],Mat_Datos_Y[Int_Contador][i],textEntryX/Img_WebCam1))  
+                    
+                    X_ = (Mat_Datos_X[Int_Contador][i]*100)/Img_WebCam1
+                    X_ = (aux_height_monitor*5)*(X_*.01)
+                    
+                    Y_ = (Mat_Datos_Y[Int_Contador][i]*100)/Img_WebCam0
+                    Y_ = (aux_height_monitor*5)*(Y_*.01)
+                    putCircleCanvas(canShowDataXY, X_, Y_,5, Mat_RGB[i][:])
+                    
+                    
+                    image_total += image_aux
+                    if i == number_subject -1:
+                        image_total = cv2.resize(image_total,(round(aux_width_monitor*4), round(aux_height_monitor*4))) 
+                        j = 0
+                        for j in range(number_subject):
+                            cv2.putText(image_total,str(j+1),(int(Mat_Datos_X[Int_Contador][j])+10,int(Mat_Datos_Y[Int_Contador][j])),Font_CV, .5,(0,0,255),1)    
+                        cv2.putText(image_total,'T: ',(5,15),Font_CV, .5,(255,255,255),1)
+                        cv2.putText(image_total,str(round((Arr_TiempoReal[3]) ,2)),(65,15),Font_CV, .5,(255,255,255),1)
+                        cv2.imshow('Tracking',image_total)
+                        cv2.moveWindow('Tracking', 90,220);
+                        cv2.waitKey(5)
+                      
+                        
+                Mat_Datos[Int_Contador][0] = Arr_TiempoReal[3]
+                Mat_Datos[Int_Contador][2] = Arr_TiempoReal[2]
+                Mat_Datos[Int_Contador][4] = Int_Datos_Consecuencia
+                
+                Int_Contador += 1          
+
+                Arr_TiempoReal[1]=time.time()
+                Arr_TiempoReal[2]=Arr_TiempoReal[1]-Arr_TiempoReal[0] 
+                Arr_TiempoReal[3]+= Arr_TiempoReal[2]
+                Arr_TiempoReal[0]=time.time()
+                
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break  
+                    
+            Dev_WebCam_Read.release()
+            cv2.destroyAllWindows()
+            if saveVideo == 1:
+                out.release()
+            
+            Mat_Datos = np.delete(Mat_Datos,np.where(Mat_Datos[:,0] == -1), axis=0)
+            Mat_Datos_X = Mat_Datos_X[0:len(Mat_Datos),:]
+            Mat_Datos_Y = Mat_Datos_Y[0:len(Mat_Datos),:]
+            Mat_Datos_D = Mat_Datos_D[0:len(Mat_Datos),:]
+            
+            Select_Frames_Number = messagebox.askyesno("Change frames","Would you like to change the default frames?")
+            
+            if Select_Frames_Number == True: 
+                Number_Frames_ask = askstring('Frames per sec.', 'Insert the number of frames')
+                Number_Frames = int(Number_Frames_ask)
+                try:
+                    Number_Frames = 2
+                    Final_Values = []
+                    i = 1
+                    for i in range(1,len(Mat_Datos)):
+                        Temp_values = Mat_Datos[np.where( (Mat_Datos[:,0] < i) & (Mat_Datos[:,0] > i-1)),0]
+                        Temp_Perm = np.random.permutation(Temp_values.size)[0:Number_Frames]
+                        Temp_values = np.sort(Temp_values[0,Temp_Perm])
+                        Final_Values = np.hstack((Final_Values,Temp_values))
+                    
+                    i = 0
+                    Mat_Datos_N = np.zeros((len(Final_Values),7))
+                    Mat_Datos_X_N = np.zeros((len(Final_Values),16)) 
+                    Mat_Datos_Y_N = np.zeros((len(Final_Values),16)) 
+                    Mat_Datos_D_N = np.zeros((len(Final_Values),16)) 
+                    for i in range(0,len(Final_Values)):
+                        Temp_Data = Mat_Datos[np.where( (Mat_Datos[:,0] == Final_Values[i])),:]
+                        Temp_Data_X = Mat_Datos_X[np.where( (Mat_Datos[:,0] == Final_Values[i])),:]
+                        Temp_Data_Y = Mat_Datos_Y[np.where( (Mat_Datos[:,0] == Final_Values[i])),:]
+                        Temp_Data_D = Mat_Datos_Y[np.where( (Mat_Datos[:,0] == Final_Values[i])),:]
+                        Mat_Datos_N[i,:] = Temp_Data
+                        Mat_Datos_X_N[i,:] = Temp_Data_X
+                        Mat_Datos_Y_N[i,:] = Temp_Data_Y
+                        Mat_Datos_D_N[i,:] = Temp_Data_D
+                    Mat_Datos = Mat_Datos_N
+                    Mat_Datos_X = Mat_Datos_X_N
+                    Mat_Datos_Y = Mat_Datos_Y_N
+                    Mat_Datos_D = Mat_Datos_D_N
+                except:
+                    messagebox.showinfo("Error", "Not enough frames")    
+            
+                   
+            #Datos
+            j = 0
+            for j in range(number_subject):
+                #Datos_Generales
+                Archivo_Mat_Datos = open(Dir_Datos + sessionName + '_' + str(j+1) + '.txt','w')
+                Archivo_Mat_Datos.write('Subject: ' + subject + '_' + str(j+1) +'\n' +
+                                        'Session: ' + session + '\n' +
+                                        'Group: ' + group + '\n' +
+                                        'Time: '+ str(max(Mat_Datos[:,0])) + '\n' +
+                                        'Consecuences: ' + str(np.size(np.where(Mat_Datos[:,4] == 1))) + '\n' +
+                                        'Distance: ' + str(round(sum(Mat_Datos_D[:,j]),3)) + 'cm' + '\n' +
+                                        'Velocity: ' + str(round(sum(Mat_Datos_D[:,j])/max(Mat_Datos[:,0]),3)) + 'cm/seg' + '\n' +
+                                        '\n' + 'Frame;Time;X;Y;Distance;Consecuences' + '\n')
+                #Datos_Matriz
+                i = 1
+                for i in range(0,len(Mat_Datos)): 
+                    Archivo_Mat_Datos.write(str(i) + ';' + str(round(Mat_Datos[i][0],3)) +
+                                                     ';' + str(round(Mat_Datos_X[i][j] * (textEntryX/Img_WebCam1),3)) +
+                                                     ';' + str(round(Mat_Datos_Y[i][j] * (textEntryY/Img_WebCam0),3)) +
+                                                     ';' + str(round(Mat_Datos_D[i][j],3)) +
+                                                     ';' + str(Mat_Datos[i][4]) + '\n')
+                
+                Archivo_Mat_Datos.close()
+                
+            messagebox.showinfo("Finalized", "Sesion has been traked")
+#%%Fun_Nuevo_Proyecto_Vivo      
+def Fun_Nuevo_Proyecto_Vivo():
+    global Seleccion_Track, Dialog_Video_File, Ruta_Proyecto, Ruta_Video, Carpeta_Imagenes, Ruta_Carpeta_Imagenes, Nombre_Archivo, Ruta_Imagen
+    global Lbl_Img_Original
+    Seleccion_Track = 2
+    
+    Dialog_Video_File = filedialog.asksaveasfilename(initialdir = Dir_Videos,
+                                                     title = "Guardar archivo",
+                                                     filetypes = (("all files","*.*"), ("jpeg files","*.jpg")))
+    Ruta_Proyecto = Dir_Videos
+    Ruta_Video = Dialog_Video_File+'/'
+    Carpeta_Imagenes ='/Images/'
+    Ruta_Carpeta_Imagenes = Dialog_Video_File + Carpeta_Imagenes
+    Nombre_Archivo = Dialog_Video_File.split('/')[(np.size(Dialog_Video_File.split('/')))-1]
+    
+    if os.path.exists(Dialog_Video_File):
+        os.path.exists(Dialog_Video_File)
+        os.mkdir(Dialog_Video_File+Carpeta_Imagenes)
+    else:
+        os.mkdir(Dialog_Video_File)
+        os.mkdir(Dialog_Video_File+Carpeta_Imagenes)
+        
+    Dev_WebCam_Resolution = Seleccion_Resolucion
+    Dev_WebCam_Read = FunSetResolutionParameter(Dev_WebCam_Resolution, Seleccion_Camara)
+    j=0
+    while (Dev_WebCam_Read.isOpened()):
+        ret, frame = Dev_WebCam_Read.read()    
+        Ruta_Imagen = Ruta_Carpeta_Imagenes+'Image_1.jpg'
+        cv2.imwrite(Ruta_Imagen, frame)
+        j+=1
+        if j==3:
+            break
+    Dev_WebCam_Read.release()
+    
+    global Dialog_Video_File_Aux
+    Dialog_Video_File_Aux = Ruta_Imagen.replace('Image_1', 'Aux_Image')
+    
+    Lbl_Img_Original.place_forget()
+    Img_Original= PIL.Image.open(Ruta_Imagen)
+    Img_Original_2 = imageRezicePesNewProject(Img_Original)
+    
+    Photo_Img_Aux = ImageTk.PhotoImage(Img_Original_2)
+    Lbl_Img_Original = tkinter.Label(pesNewProject, image=Photo_Img_Aux, bg = Fun_Rgb(C_Primary), bd = 0)
+    Lbl_Img_Original.image = Photo_Img_Aux 
+    Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1) 
+    
+    def Fun_Borrar_Y_Tomar_Nueva():
+        os.remove(Ruta_Carpeta_Imagenes+'Image_1.jpg')
+        global Lbl_Img_Original, Lbl_Img_Original_Aux
+        
+        Dev_WebCam_Resolution = Seleccion_Resolucion
+        Dev_WebCam_Read = FunSetResolutionParameter(Dev_WebCam_Resolution, Seleccion_Camara)
+        j=0
+        while (Dev_WebCam_Read.isOpened()):
+            ret, frame = Dev_WebCam_Read.read()    
+            Ruta_Imagen = Ruta_Carpeta_Imagenes+'Image_1.jpg'# +  str(int(i)) + ".jpg"
+            cv2.imwrite(Ruta_Imagen, frame)
+            j+=1
+            if j==3:
+                break
+        Dev_WebCam_Read.release()
+        
+        global Dialog_Video_File_Aux
+        Dialog_Video_File_Aux = Ruta_Imagen.replace('Image_1', 'Aux_Image')
+        
+        Img_Original= PIL.Image.open(Ruta_Imagen)
+        Img_Original_2 = imageRezicePesNewProject(Img_Original)
+        
+        Photo_Img_Aux = ImageTk.PhotoImage(Img_Original_2)
+        Lbl_Img_Original = tkinter.Label(pesNewProject, image=Photo_Img_Aux, bg = Fun_Rgb(C_Primary), bd = 0)
+        Lbl_Img_Original.image = Photo_Img_Aux 
+        Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1) 
+        
+        
+        mensaje1 = messagebox.askyesno(message= 'Take another picture?', title="Picture")
+        if mensaje1==True:
+            Lbl_Img_Original.place_forget()
+            Fun_Borrar_Y_Tomar_Nueva()
+     
+    mensaje1 =messagebox.askyesno(message="Take another picture?", title="Picture")
+    if mensaje1==True:
+        Lbl_Img_Original.place_forget()
+        Fun_Borrar_Y_Tomar_Nueva()
+    updateSeleccionTrackLive()
+#%%Fun updateSeleccionTrackLive
+def updateSeleccionTrackLive():
+    global Seleccion_Track
+    Seleccion_Track = 2      
+#%%Fun updateSeleccionTrackVideo
+def updateSeleccionTrackVideo():
+    global Seleccion_Track
+    Seleccion_Track = 1 
+    
+def Fun_Abrir_Proyecto_Vivo():
+    global Seleccion_Track
+    Seleccion_Track = 2
+    # Fun_Iniciar_Track()
 #%%-------------WIDGETS APLICATION-------------
-#%%Principal window
+#%%Window
 root = Tk()
 root.title('Walden Tracking System v-3.0')
 root.geometry(str(width_monitor)+'x'+str(height_monitor-70)+'+0+0') 
@@ -1069,15 +1926,8 @@ root.iconbitmap(Dir_Images+"Icon.ico")
 root.resizable(0,0)
 root.config(bg = Fun_Rgb(C_Primary))
 root.isStopped = False
-#%%Global variables   
-global Lbl_Img_Original, List_Contenido, pathImageProject, textEnt, currentProject, openProjectVar, lblVideo
 
-currentProject = 0                
 Lbl_Img_Original = Label(root, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
-List_Contenido = []
-pathImageProject = ''
-currentPicture = 0
-openProjectVar = 0
 #%%Toolbar and menu
 toolbar = Frame(root)
 
@@ -1103,7 +1953,7 @@ useImg7 = ImageTk.PhotoImage(img7)
 
 iconTool_Options = Button(toolbar, image=useImg1, text="Settings", width=20, command=openSettings)
 iconTool_Options.pack(side=LEFT, padx=2, pady=2)
-CreateToolTip(iconTool_Options, text = 'Aettings')
+CreateToolTip(iconTool_Options, text = 'Settings')
 
 iconTool_CutVideo = Button(toolbar, image=useImg5, text="Select video to cut", width=20, command=SelectVideo)
 iconTool_CutVideo.pack(side=LEFT, padx=2, pady=2)
@@ -1152,7 +2002,8 @@ Menu_Opc1.add_command(label='Select video to cut', command=SelectVideo)
 Menu_Opc1.add_command(label='Open image project', command=openImage) 
 Menu_Opc1.add_command(label='Open video', command=openVideo) 
 Menu_Opc1.add_separator()
-Menu_Opc1.add_command(label='New video project', command = newVideoProject)
+Menu_Opc1.add_command(label='Video project', command = newVideoProject)
+Menu_Opc1.add_command(label='Live project', command = Fun_Nuevo_Proyecto_Vivo)
 Menu_Opc1.add_command(label='Get RGB values', command = Fun_Get_RGB)
 Menu_Opc1.add_separator()
 Menu_Opc1.add_command(label='Data analysis')
@@ -1161,6 +2012,14 @@ Menu_Opc1.add_separator()
 Menu_Opc1.add_command(label='Settings', command = openSettings)
 Menu_Opc1.add_separator()
 Menu_Opc1.add_command(label='License', command=info)  
+
+Menu_Track = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
+                             activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Light_Dark),
+                             tearoff=0)                         
+menubar.add_cascade(label="Config file", menu=Menu_Track)
+Menu_Track.add_command(label='Video project', command = newVideoProject)
+Menu_Track.add_command(label='Live project', command = Fun_Nuevo_Proyecto_Vivo)
+Menu_Track.add_command(label='Get RGB values', command = Fun_Get_RGB)
 #%%Notebooks
 style = ttk.Style()
 if theme == 0:
@@ -1196,13 +2055,13 @@ style.theme_use("mi_estilo")
 
 notebook = ttk.Notebook(root)
 notebook.pack(fill = 'both', expand = 'yes')
-pesCutVideo = tkinter.Frame(notebook, background = Fun_Rgb(C_Primary))
+pesCutVideo = tkinter.Frame(notebook, background = Fun_Rgb(C_Light_Dark))
 pesNewProject = tkinter.Frame(notebook, background = Fun_Rgb(C_Light_Dark))
-pesTracking = tkinter.Frame(notebook, background = Fun_Rgb(C_Dark))
+pesTracking = tkinter.Frame(notebook, background = Fun_Rgb(C_Light_Dark))
 
 notebook.add(pesNewProject, text = 'New project')
-notebook.add(pesCutVideo, text = '  Videos', compound=LEFT)
 notebook.add(pesTracking, text= 'Track')
+notebook.add(pesCutVideo, text = 'Videos', compound=LEFT)
 #%%-------------WIDGETS NOTEBOOK VIDEOS-------------
 #%%Canvas notebook Videos
 canTittle = Canvas(pesCutVideo, width=int(width_monitor), height=int(aux_height_monitor*14), bg=Fun_Rgb(C_Primary))
@@ -1244,7 +2103,6 @@ canTittle.create_rectangle(int(aux_width_monitor*8.3), int(aux_height_monitor*11
 canTittle.create_rectangle(int(aux_width_monitor*8.4), int(aux_height_monitor*11.1), 
                            int(aux_width_monitor*12.5), int(aux_height_monitor*11.9), fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
 canTittle.place(x=0,y=0) 
-
 #%%Labels, buttons and entries of notebook Video         
 lblVideo = Label(pesCutVideo, text="Image/Video", bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
 lblVideo.config(font = (Font_1,15))
@@ -1310,7 +2168,7 @@ lblURL = Label(pesCutVideo, text='URL:', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C
 lblURL.config(font = (Font_1,15))
 lblURL.place(x=aux_width_monitor*8.5, y=aux_height_monitor*4.25)
 
-lblNumberImage = Label(pesCutVideo, text='Image '+str(currentPicture)+ ' of '+str(len(List_Contenido)) +'       ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+lblNumberImage = Label(pesCutVideo, text='Image '+str(currentPicture+1)+ ' of '+str(len(List_Contenido)) +'       ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
 lblNumberImage.config(font = (Font_1,15))
 lblNumberImage.place(x=aux_width_monitor*1, y=aux_height_monitor*9.1)
 
@@ -1318,9 +2176,9 @@ lblOpenVideo = Label(pesCutVideo, text = 'Video info', bg= Fun_Rgb(C_Primary), f
 lblOpenVideo.config(font = (Font_1, 15))
 lblOpenVideo.place(x = aux_width_monitor*4.5, y = aux_height_monitor*9.1)
 
-lblImageProject = Label(pesCutVideo, text='Project: ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
-lblImageProject.config(font = (Font_1,15))
-lblImageProject.place(x=aux_width_monitor*8.5, y=aux_height_monitor*9.2)
+lblVideoProject = Label(pesCutVideo, text='Project: ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+lblVideoProject.config(font = (Font_1,15))
+lblVideoProject.place(x=aux_width_monitor*8.5, y=aux_height_monitor*9.2)
 
 lblVideoProject = Label(pesCutVideo, text='Project: ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
 lblVideoProject.config(font = (Font_1,15))
@@ -1629,30 +2487,30 @@ Etr3_Tamano_Caja.insert(0,'1')
 Lbl_Slider_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                              text = 'Color')
 Lbl_Slider_1.config(font=(Font_1,20))
-Lbl_Slider_1.place(x=aux_width_monitor*8, y=aux_height_monitor*.7)
+Lbl_Slider_1.place(x=aux_width_monitor*8, y=aux_height_monitor*.2)
 
 #Slider 1
 Lbl_Slider_RojoText_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                                       text = 'R')
 Lbl_Slider_RojoText_1.config(font = (Font_1,20))
-Lbl_Slider_RojoText_1.place(x=aux_width_monitor*8, y=aux_height_monitor*1.5)
+Lbl_Slider_RojoText_1.place(x=aux_width_monitor*8, y=aux_height_monitor*1)
 
 Slider_Rojo = tkinter.Scale(pesNewProject, 
         from_=0, to=255, resolution=1,
         orient=tkinter.HORIZONTAL, width = aux_height_monitor*.4,  length=aux_width_monitor*2.5,
         fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
         activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
-        showvalue=1, command = getValuesSliders)#Fun_Color_CuadroR)      
+        showvalue=1, command = getValuesSliders)    
 Slider_Rojo.set(255)
 Slider_Rojo.config(font = (Font_1,12))
-Slider_Rojo.place(x=aux_width_monitor*8.3, y=aux_height_monitor*1.5)
-
+Slider_Rojo.place(x=aux_width_monitor*8.3, y=aux_height_monitor*1)
 
 #Slider 2
 Lbl_Slider_VerdeText_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
                                        text = 'G')
 Lbl_Slider_VerdeText_1.config(font = (Font_1,20))
-Lbl_Slider_VerdeText_1.place(x=aux_width_monitor*8, y=aux_height_monitor*2.9)
+Lbl_Slider_VerdeText_1.place(x=aux_width_monitor*8, y=aux_height_monitor*2.2)
+
 Slider_Verde = tkinter.Scale(pesNewProject, 
         from_=0, to=255, resolution=1,
         orient=tkinter.HORIZONTAL, width = aux_height_monitor*.4,  length=aux_width_monitor*2.5,
@@ -1661,13 +2519,13 @@ Slider_Verde = tkinter.Scale(pesNewProject,
         showvalue=1, command = getValuesSliders)
 Slider_Verde.set(255)
 Slider_Verde.config(font = (Font_1,12))
-Slider_Verde.place(x=aux_width_monitor*8.3, y=aux_height_monitor*2.9)
+Slider_Verde.place(x=aux_width_monitor*8.3, y=aux_height_monitor*2)
 
 #Slider 3
 Lbl_Slider_AzulText_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                                       text = 'B')
 Lbl_Slider_AzulText_1.config(font = (Font_1,20))
-Lbl_Slider_AzulText_1.place(x=aux_width_monitor*8, y=aux_height_monitor*4.3)
+Lbl_Slider_AzulText_1.place(x=aux_width_monitor*8, y=aux_height_monitor*3)
 Slider_Azul = tkinter.Scale(pesNewProject, 
         from_=0, to=255, resolution=1,
         orient=tkinter.HORIZONTAL, width = aux_height_monitor*.4,  length=aux_width_monitor*2.5,
@@ -1676,13 +2534,13 @@ Slider_Azul = tkinter.Scale(pesNewProject,
         showvalue=1, command = getValuesSliders)
 Slider_Azul.set(255)
 Slider_Azul.config(font = (Font_1,12))
-Slider_Azul.place(x=aux_width_monitor*8.3, y=aux_height_monitor*4.2)
+Slider_Azul.place(x=aux_width_monitor*8.3, y=aux_height_monitor*3)
 
 #Slider Desviación
 Lbl_Slider_Desviacio = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                              text = 'Range')
-Lbl_Slider_Desviacio.config(font=(Font_1,20))
-Lbl_Slider_Desviacio.place(x=aux_width_monitor*13.8, y=aux_height_monitor*.7)
+Lbl_Slider_Desviacio.config(font=(Font_1,15))
+Lbl_Slider_Desviacio.place(x=aux_width_monitor*13.5, y=aux_height_monitor*.2)
 Slider_Desviacion = tkinter.Scale(pesNewProject, 
         from_=0, to=150, resolution=1,
         orient=tkinter.VERTICAL, width = aux_height_monitor*.3,  length= aux_width_monitor*2,
@@ -1691,7 +2549,7 @@ Slider_Desviacion = tkinter.Scale(pesNewProject,
         showvalue=1, command = getValuesSliders)
 Slider_Desviacion.set(0)
 Slider_Desviacion.config(font = (Font_1,14))
-Slider_Desviacion.place(x=aux_width_monitor*13.9, y=aux_height_monitor*1.5)
+Slider_Desviacion.place(x=aux_width_monitor*13.5, y=aux_height_monitor*.7)
 
 Rgb_Can = Canvas(pesNewProject, width=int(aux_width_monitor*2), 
                  height= int(aux_width_monitor*2), bg=Fun_Rgb(C_Primary))
@@ -1699,7 +2557,7 @@ Cuadro_Rgb2 =  Rgb_Can.create_rectangle(0, 0, aux_width_monitor*.7, aux_width_mo
 Cuadro_Rgb1 =  Rgb_Can.create_rectangle(aux_width_monitor*.7, 0, aux_width_monitor*1.4, aux_width_monitor*2.1, outline=Fun_Rgb(C_White), width=0)
 Cuadro_Rgb3 =  Rgb_Can.create_rectangle(aux_width_monitor*1.4, 0, aux_width_monitor*2.1, aux_width_monitor*2.1, outline=Fun_Rgb(C_White
                                                                                                                                 ), width=0)
-Rgb_Can.place(x=aux_width_monitor*11.15, y=aux_height_monitor*1.5)  
+Rgb_Can.place(x=aux_width_monitor*11.15, y=aux_height_monitor*.5)  
 
 imgCubo = Fun_Size(Dir_Images  +'cubo2.png',.2*aux_size)
 lblCubo = Label(pesNewProject, bg = Fun_Rgb(C_Primary), 
@@ -1710,52 +2568,52 @@ lblCubo.place(x=aux_width_monitor*5.5,y=aux_height_monitor*1.5)
 Lbl_Filtro_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
                              text = 'Filter')
 Lbl_Filtro_1.config(font = (Font_1,20))
-Lbl_Filtro_1.place(x=aux_width_monitor*8, y=aux_height_monitor*5.5)
+Lbl_Filtro_1.place(x=aux_width_monitor*8, y=aux_height_monitor*4.5)
 
 Var_Filtro = tkinter.IntVar()
 RdBtn_1 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
-                              bg = Fun_Rgb(C_Primary), 
-                              activebackground=Fun_Rgb(C_Light_Dark),
+                              bg = Fun_Rgb(C_Light_Dark), 
+                              activebackground=Fun_Rgb(C_White),
                               text="Black & White - Weak  ", variable=Var_Filtro, 
                               value=1, indicatoron=0, width = 23, command = lambda: getValuesSliders(1))
 RdBtn_1.config(font = (Font_1,15))
-RdBtn_1.place(x=aux_width_monitor*8, y=aux_height_monitor*6.4)
+RdBtn_1.place(x=aux_width_monitor*8, y=aux_height_monitor*5.4)
 RdBtn_2 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
-                              bg = Fun_Rgb(C_Primary), 
-                              activebackground=Fun_Rgb(C_Light_Dark),
+                              bg = Fun_Rgb(C_Light_Dark), 
+                              activebackground=Fun_Rgb(C_White),
                               text="Black & White - Strong", variable=Var_Filtro, 
                               value=2, indicatoron=0, width = 23, command = lambda: getValuesSliders(2))
 RdBtn_2.config(font = (Font_1,15))
-RdBtn_2.place(x=aux_width_monitor*8, y=aux_height_monitor*7.2)
+RdBtn_2.place(x=aux_width_monitor*8, y=aux_height_monitor*6.2)
 RdBtn_3 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
-                              bg = Fun_Rgb(C_Primary), 
-                              activebackground=Fun_Rgb(C_Light_Dark),
+                              bg = Fun_Rgb(C_Light_Dark), 
+                              activebackground=Fun_Rgb(C_White),
                               text="Uniform - Weak       ", variable=Var_Filtro, 
                               value=3, indicatoron=0, width = 22, command = lambda: getValuesSliders(3))
 RdBtn_3.config(font = (Font_1,15))
-RdBtn_3.place(x=aux_width_monitor*11.4, y=aux_height_monitor*6.4)
+RdBtn_3.place(x=aux_width_monitor*11.4, y=aux_height_monitor*5.4)
 RdBtn_4 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
-                              bg = Fun_Rgb(C_Primary), 
-                              activebackground=Fun_Rgb(C_Light_Dark),
+                              bg = Fun_Rgb(C_Light_Dark), 
+                              activebackground=Fun_Rgb(C_White),
                               text="Uniform - Strong     ", variable=Var_Filtro, 
                               value=4, indicatoron=0, width = 22, command = lambda: getValuesSliders(4))
 RdBtn_4.config(font = (Font_1,15))
-RdBtn_4.place(x=aux_width_monitor*11.4, y=aux_height_monitor*7.2)
+RdBtn_4.place(x=aux_width_monitor*11.4, y=aux_height_monitor*6.2)
 RdBtn_5 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
-                              bg = Fun_Rgb(C_Primary), 
-                              activebackground=Fun_Rgb(C_Light_Dark),
+                              bg = Fun_Rgb(C_Light_Dark), 
+                              activebackground=Fun_Rgb(C_White),
                               text="No Filter             ", variable=Var_Filtro, 
                               value=5, indicatoron=0, width = 23, command = lambda: getValuesSliders(5))
 RdBtn_5.config(font = (Font_1,15))
-RdBtn_5.place(x=aux_width_monitor*8, y=aux_height_monitor*8)
+RdBtn_5.place(x=aux_width_monitor*8, y=aux_height_monitor*7)
 
 Var_Filtro.get()
 
 #Otros
 Lbl_Filtro_2 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                              text = 'Threshold')
-Lbl_Filtro_2.config(font = (Font_1,20))
-Lbl_Filtro_2.place(x=aux_width_monitor*8, y=aux_height_monitor*9.1)
+Lbl_Filtro_2.config(font = (Font_1,18))
+Lbl_Filtro_2.place(x=aux_width_monitor*8, y=aux_height_monitor*8)
 
 Entr_Umbral = tkinter.Scale(pesNewProject, 
         from_= 0, to=1, resolution=0.01,
@@ -1763,53 +2621,224 @@ Entr_Umbral = tkinter.Scale(pesNewProject,
         fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
         activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
         showvalue=1, command = getValuesSliders)
-Entr_Umbral.config(font = (Font_1,15))
+Entr_Umbral.config(font = (Font_1,12))
 Entr_Umbral.set(.5)
-Entr_Umbral.place(x=aux_width_monitor*8, y=aux_height_monitor*10)
+Entr_Umbral.place(x=aux_width_monitor*8, y=aux_height_monitor*8.7)
 
 Lbl_Filtro_3 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                              text = 'Target size')
-Lbl_Filtro_3.config(font = (Font_1,20))
-Lbl_Filtro_3.place(x=aux_width_monitor*11.4, y=aux_height_monitor*9.1)        
+Lbl_Filtro_3.config(font = (Font_1,18))
+Lbl_Filtro_3.place(x=aux_width_monitor*11.4, y=aux_height_monitor*8)        
 Entr_Valor_Minimo_Animal = tkinter.Scale(pesNewProject, 
         from_= 0, to=50, resolution=1,
         orient=tkinter.HORIZONTAL, width = aux_height_monitor*.4,  length=aux_width_monitor*3,
         fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
         activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
         showvalue = 1)
-Entr_Valor_Minimo_Animal.config(font = (Font_1,15))
+Entr_Valor_Minimo_Animal.config(font = (Font_1,12))
 Entr_Valor_Minimo_Animal.set(3)
-Entr_Valor_Minimo_Animal.place(x=aux_width_monitor*11.4, y=aux_height_monitor*10)
+Entr_Valor_Minimo_Animal.place(x=aux_width_monitor*11.4, y=aux_height_monitor*8.7)
+
+lblConfigFileName =  tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
+                             text = 'Config file name')
+lblConfigFileName.config(font = (Font_1,18))
+lblConfigFileName.place(x=aux_width_monitor*8, y=aux_height_monitor*10)
+
+auxConfigName = StringVar()
+entConfigFile = Entry(pesNewProject, textvariable = auxConfigName, bd =1, width = 40)
+entConfigFile.config(font = (Font_1,12))
+entConfigFile.place(x=aux_width_monitor*10, y = aux_height_monitor*10.1)
 #%%Bnt Funciones Ventana Cortar imagen
 Btn_Ver_Imagen = tkinter.Button(pesNewProject, bd=0, fg = Fun_Rgb(C_White),
                                   bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
                                   text = ' Restart ', highlightbackground = Fun_Rgb(C_Light_Dark), 
-                                  command = lambda: getValuesSliders('a'))
-Btn_Ver_Imagen.config(font = (Font_1,20))
-Btn_Ver_Imagen.place(x=aux_width_monitor*7.8, y=aux_height_monitor*11.6)
+                                  command = lambda: getValuesSliders('Restart'))
+Btn_Ver_Imagen.config(font = (Font_1,22))
+Btn_Ver_Imagen.place(x=aux_width_monitor*8, y=aux_height_monitor*11)
 
 ########################
 Btn_Next_Subject = tkinter.Button(pesNewProject, bd=0, fg = Fun_Rgb(C_White),
                           bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
                           text = 'Next subject ', highlightbackground = Fun_Rgb(C_Light_Dark), 
                           command =Fun_Next_Subject)
-Btn_Next_Subject.config(font = (Font_1,20))
-Btn_Next_Subject.place(x=aux_width_monitor*9.4, y=aux_height_monitor*11.6)
+Btn_Next_Subject.config(font = (Font_1,22))
+Btn_Next_Subject.place(x=aux_width_monitor*10, y=aux_height_monitor*11)
 ###########################
 
 Btn_Cortar_Imagen = tkinter.Button(pesNewProject, bd=0, fg = Fun_Rgb(C_White),
                                   bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
                                   text = '   Save   ', highlightbackground = Fun_Rgb(C_Light_Dark), 
-                                  command =Fun_Editar_Todas_Imagenes)
-Btn_Cortar_Imagen.config(font = (Font_1,20))
-Btn_Cortar_Imagen.place(x=aux_width_monitor*11.5, y=aux_height_monitor*11.6)
+                                  command =saveParameters)
+Btn_Cortar_Imagen.config(font = (Font_1,22))
+Btn_Cortar_Imagen.place(x=aux_width_monitor*12, y=aux_height_monitor*11)
+#%%--------------------WIDGETS TRACK---------------------
+#%%Canvas notebook Track
+canTracking = Canvas(pesTracking, width=int(width_monitor), height=int(aux_height_monitor*14), bg=Fun_Rgb(C_Primary))
 
-Btn_Iniciar_Track = tkinter.Button(pesNewProject, bd=0, fg = Fun_Rgb(C_White),
-                                  bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
-                                  text = 'Tracking ', highlightbackground = Fun_Rgb(C_Light_Dark), 
-                                  )#command =Fun_Iniciar_Track)
-Btn_Iniciar_Track.config(font = (Font_1,20))
-Btn_Iniciar_Track.place(x=aux_width_monitor*13.1, y=aux_height_monitor*11.6)
+#left side
+canTracking.create_rectangle(int(aux_width_monitor*.7), int(aux_height_monitor*1), 
+                               int(aux_width_monitor*4.75), int(aux_width_monitor*3.2), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
+canTracking.create_rectangle(int(aux_width_monitor*.7), int(aux_height_monitor*7),
+                               int(aux_width_monitor*4.75), int(aux_width_monitor*6.6), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
+#right side
+#father
+canTracking.create_rectangle(int(aux_width_monitor*4.9), int(aux_height_monitor*1), 
+                             int(aux_width_monitor*10), int(aux_height_monitor*4), 
+                             fill=Fun_Rgb(C_Light_Dark), outline=Fun_Rgb(C_White), width=.1)
+#2 childs
+canTracking.create_rectangle(int(aux_width_monitor*5), int(aux_height_monitor*1.1), 
+                            int(aux_width_monitor*9), int(aux_height_monitor*1.8), 
+                            fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
+canTracking.create_rectangle(int(aux_width_monitor*5), int(aux_height_monitor*2.1), 
+                           int(aux_width_monitor*9), int(aux_height_monitor*2.8), 
+                           fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
+
+#father
+canTracking.create_rectangle(int(aux_width_monitor*4.9), int(aux_height_monitor*5), 
+                             int(aux_width_monitor*10), int(aux_height_monitor*8), 
+                             fill=Fun_Rgb(C_Light_Dark), outline=Fun_Rgb(C_White), width=.1)
+#child
+canTracking.create_rectangle(int(aux_width_monitor*5), int(aux_height_monitor*5.1), 
+                            int(aux_width_monitor*9.9), int(aux_height_monitor*7.9), 
+                            fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
+
+#father
+canTracking.create_rectangle(int(aux_width_monitor*4.9), int(aux_height_monitor*9), 
+                             int(aux_width_monitor*10), int(aux_height_monitor*10), 
+                             fill=Fun_Rgb(C_Light_Dark), outline=Fun_Rgb(C_White), width=.1)
+#child
+canTracking.create_rectangle(int(aux_width_monitor*5), int(aux_height_monitor*9.1), 
+                            int(aux_width_monitor*9.9), int(aux_height_monitor*9.9), 
+                            fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
+
+canTracking.place(x=0,y=0) 
+
+canShowDataXY = Canvas(canTracking, width=int(aux_height_monitor*5), height=int(aux_height_monitor*5), 
+                       bg=Fun_Rgb(C_White))
+canShowDataXY.place(x=aux_width_monitor*10.5, y=aux_height_monitor*1)
+#%%Labels and entries
+#Labels
+lblSetParametersFiles = Label(pesTracking, text="Set tracking parameters", bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+lblSetParametersFiles.config(font = (Font_1,15))
+lblSetParametersFiles.place(x=aux_width_monitor*5, y=aux_height_monitor*.5)
+
+lblSetSessionParameters = Label(pesTracking, text="Set session parameters", bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+lblSetSessionParameters.config(font = (Font_1,15))
+lblSetSessionParameters.place(x=aux_width_monitor*5, y=aux_height_monitor*4.5)
+
+lblSetSessionParameters = Label(pesTracking, text="Set session name", bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+lblSetSessionParameters.config(font = (Font_1,15))
+lblSetSessionParameters.place(x=aux_width_monitor*5, y=aux_height_monitor*8.5)
+
+LblSesionTime = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),  text = 'Time (sec)')
+LblSesionTime.config(font = (Font_1,13))
+LblSesionTime.place(x=aux_width_monitor*5.1, y=aux_height_monitor*5.3)
+
+LblSujeto = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Subject')
+LblSujeto.config(font = (Font_1,15))
+LblSujeto.place(x=aux_width_monitor*5.1, y=aux_height_monitor*5.9)
+
+LblSession = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Session')
+LblSession.config(font = (Font_1,15))
+LblSession.place(x=aux_width_monitor*5.1, y=aux_height_monitor*6.5)
+
+LblGroup = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Group')
+LblGroup.config(font = (Font_1,15))
+LblGroup.place(x=aux_width_monitor*5.1, y=aux_height_monitor*7.1)
+
+LblSessionName = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Name')
+LblSessionName.config(font = (Font_1,15))
+LblSessionName.place(x=aux_width_monitor*5.1, y=aux_height_monitor*9.3)
+
+Lbl_Save_Text = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Light_Dark), fg = Fun_Rgb(C_White), text = 'Save video')
+Lbl_Save_Text.config(font = (Font_1,15))
+Lbl_Save_Text.place(x=aux_width_monitor*5.2, y = aux_height_monitor*3.1)
+
+lblConfigFile = Label(pesTracking, text='Config: ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+lblConfigFile.config(font = (Font_1,15))
+lblConfigFile.place(x=aux_width_monitor*5.1, y=aux_height_monitor*1.2)
+
+lblProjectFile = Label(pesTracking, text='Project: ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+lblProjectFile.config(font = (Font_1,15))
+lblProjectFile.place(x=aux_width_monitor*5.1, y=aux_height_monitor*2.2)
+
+LblPreviewTrack = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Preview')
+LblPreviewTrack.config(font = (Font_1,15))
+LblPreviewTrack.place(x=aux_width_monitor*10.5, y = aux_height_monitor*.5)
+
+LblAxisX = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Axis X = ')
+LblAxisX.config(font = (Font_1,12))
+LblAxisX.place(x=aux_width_monitor*10.5, y = aux_height_monitor*6.5)
+
+LblAxisY = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Axis Y = ')
+LblAxisY.config(font = (Font_1,12))
+LblAxisY.place(x=aux_width_monitor*13.5, y = aux_height_monitor*3)
+
+Var_SaveVideo = tkinter.IntVar(pesTracking)
+radBtnSaveVideo = tkinter.Radiobutton(pesTracking, bg = Fun_Rgb(C_Light_Dark), fg = Fun_Rgb(C_Light_Dark), 
+                                   activebackground=Fun_Rgb(C_Primary),
+                                   highlightbackground=Fun_Rgb(C_Primary), variable=Var_SaveVideo, value=1)
+radBtnSaveVideo.config(font = (Font_1,12))
+radBtnSaveVideo.place(x=aux_width_monitor*5, y = aux_height_monitor*3.1)
+
+#Entries
+varTime = StringVar()
+varSubject = StringVar()
+varSession = StringVar()
+varGroup = StringVar()
+varSessionName = StringVar()
+
+entTime = Entry(pesTracking, textvariable = varTime, bd =1, width = 40)
+entTime.config(font = (Font_1,12))
+entTime.place(x=aux_width_monitor*6, y = aux_height_monitor*5.3)
+
+entSubject = Entry(pesTracking, textvariable = varSubject, bd =1, width = 40)
+entSubject.config(font = (Font_1,12))
+entSubject.place(x=aux_width_monitor*6, y = aux_height_monitor*5.9)
+
+entSession = Entry(pesTracking, textvariable = varSession, bd =1, width = 40)
+entSession.config(font = (Font_1,12))
+entSession.place(x=aux_width_monitor*6, y = aux_height_monitor*6.5)
+
+entGroup = Entry(pesTracking, textvariable = varGroup, bd =1, width = 40)
+entGroup.config(font = (Font_1,12))
+entGroup.place(x=aux_width_monitor*6, y = aux_height_monitor*7.1)
+
+entSessionName = Entry(pesTracking, textvariable = varSessionName, bd =1, width = 40)
+entSessionName.config(font = (Font_1,12))
+entSessionName.place(x=aux_width_monitor*6, y = aux_height_monitor*9.3)
+
+#Bnt 
+BntTrack = tkinter.Button(pesTracking, bd=0, fg = Fun_Rgb(C_White),
+                        bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
+                        text = 'Track', highlightbackground = Fun_Rgb(C_Light_Dark), 
+                        command =  TrackProject)
+BntTrack.config(font = (Font_1,25))
+BntTrack.place(x=aux_width_monitor*8.5, y = aux_height_monitor*10.5)  
+
+btnOpenConfigFile = tkinter.Button(pesTracking, bd=0, fg = Fun_Rgb(C_White), 
+                        bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
+                        text = 'Open', highlightbackground = Fun_Rgb(C_Light_Dark),
+                        command = openConfigFile)
+btnOpenConfigFile.config(font = (Font_1,15))
+btnOpenConfigFile.place(x=aux_width_monitor*9.2, y = aux_height_monitor*1.1)
+
+btnOpenProjectDirectory = tkinter.Button(pesTracking, bd=0, fg = Fun_Rgb(C_White), 
+                        bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
+                        text = 'Open', highlightbackground = Fun_Rgb(C_Light_Dark), 
+                        command = openProjectDirectoryToTrack)
+btnOpenProjectDirectory.config(font = (Font_1,15))
+btnOpenProjectDirectory.place(x=aux_width_monitor*9.2, y = aux_height_monitor*2.1)   
+
+btnClearCanvas = tkinter.Button(pesTracking, bd=0, fg = Fun_Rgb(C_White), 
+                        bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
+                        text = 'Clear', highlightbackground = Fun_Rgb(C_Light_Dark), 
+                        command = clearCanvas)
+btnClearCanvas.config(font = (Font_1,20))
+btnClearCanvas.place(x=aux_width_monitor*12.5, y = aux_height_monitor*6.3)            
+#%%--------------------MAILOOP---------------------
 #%%Mainloop
+# for i in range(10):
+#     putCircleCanvas(canShowDataXY, i, i+1, 5, 1)
 root.mainloop()
  
