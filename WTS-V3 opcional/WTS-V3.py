@@ -1113,21 +1113,13 @@ def putCircleCanvas(canShowDataXY, x, y, r, Mat_RGB):
         colorRGB = (int(Mat_RGB[0]), int(Mat_RGB[1]), int(Mat_RGB[2]))
         colorCircleCanvas = Fun_Rgb(colorRGB)
     
-    if auxColorCircleCanvas % 2 == 0:
-        auxColorB -= 1
-    else:
-        auxColorG -= 1
-        
-    if auxColorB <= 0 or auxColorG <= 0:
-        auxColorG = 0
-        auxColorB = 0
-     
     id = canShowDataXY.create_oval(x-r,y-r,x+r,y+r, fill=colorCircleCanvas)
     # canShowDataXY.create_text(x + r*2, y +r*2,fill="darkblue",font="Times 12 bold",
     #                     text=str(auxColorCircleCanvas))
 
     canShowDataXY.update()    
     return id
+#%%Fun clearCanvas
 def clearCanvas():
     canShowDataXY.delete("all")
 #%%Fun openConfigFile
@@ -1945,8 +1937,8 @@ img6 = PIL.Image.open(Dir_Images+'changeCamera.png')
 useImg6 = ImageTk.PhotoImage(img6)
 img7 = PIL.Image.open(Dir_Images+'openVideo.png')
 useImg7 = ImageTk.PhotoImage(img7)
-# img8 = PIL.Image.open(Dir_Images+'data.png')
-# useImg8 = ImageTk.PhotoImage(img8)
+img8 = PIL.Image.open(Dir_Images+'live.png')
+useImg8 = ImageTk.PhotoImage(img8)
 # img9 = PIL.Image.open(Dir_Images+'user.png')
 # useImg9 = ImageTk.PhotoImage(img9)
 
@@ -1967,15 +1959,13 @@ iconOpenVideo = Button(toolbar, image=useImg2, text="Open video project", width=
 iconOpenVideo.pack(side=LEFT, padx=2, pady=2)
 CreateToolTip(iconOpenVideo, text = 'Open video project')
 
-iconNewProject = Button(toolbar, image=useImg3, text="New video project", width=20, command=newVideoProject)
-iconNewProject.pack(side=LEFT, padx=2, pady=2)
-CreateToolTip(iconNewProject, text = 'New video project')
+iconNewVideoProject = Button(toolbar, image=useImg3, text="New video project", width=20, command=newVideoProject)
+iconNewVideoProject.pack(side=LEFT, padx=2, pady=2)
+CreateToolTip(iconNewVideoProject, text = 'New video project')
 
-
-
-# iconNewObservation = Button(toolbar, image=useImg6, text="Observation", width=20, command= openProject)
-# iconNewObservation.pack(side=LEFT, padx=2, pady=2)
-# CreateToolTip(iconNewObservation, text = 'New observation')
+iconNewLiveProject = Button(toolbar, image=useImg8, text="Live project", width=20, command= Fun_Nuevo_Proyecto_Vivo)
+iconNewLiveProject.pack(side=LEFT, padx=2, pady=2)
+CreateToolTip(iconNewLiveProject, text = 'New live project')
 
 # iconOpenObservation = Button(toolbar, image=useImg7, text="Observation", width=20, command= openObservation)
 # iconOpenObservation.pack(side=LEFT, padx=2, pady=2)
@@ -2011,15 +2001,34 @@ Menu_Opc1.add_command(label='User information')
 Menu_Opc1.add_separator()
 Menu_Opc1.add_command(label='Settings', command = openSettings)
 Menu_Opc1.add_separator()
-Menu_Opc1.add_command(label='License', command=info)  
+Menu_Opc1.add_command(label='License', command=info)
+
+Menu_Videos = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
+                             activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Light_Dark),
+                             tearoff=0)                         
+menubar.add_cascade(label="Videos", menu=Menu_Videos)
+Menu_Videos.add_command(label='Select video to cut', command=SelectVideo)
+Menu_Videos.add_command(label='Open image project', command=openImage) 
+Menu_Videos.add_command(label='Open video', command=openVideo)   
+
+Menu_Config = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
+                             activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Light_Dark),
+                             tearoff=0)                         
+menubar.add_cascade(label="Config file", menu=Menu_Config)
+Menu_Config.add_command(label='Video project', command = newVideoProject)
+Menu_Config.add_command(label='Live project', command = Fun_Nuevo_Proyecto_Vivo)
+Menu_Config.add_separator()
+Menu_Config.add_command(label='Get RGB values', command = Fun_Get_RGB)
 
 Menu_Track = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
                              activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Light_Dark),
                              tearoff=0)                         
-menubar.add_cascade(label="Config file", menu=Menu_Track)
-Menu_Track.add_command(label='Video project', command = newVideoProject)
-Menu_Track.add_command(label='Live project', command = Fun_Nuevo_Proyecto_Vivo)
-Menu_Track.add_command(label='Get RGB values', command = Fun_Get_RGB)
+menubar.add_cascade(label="Tracking", menu=Menu_Track)
+Menu_Track.add_command(label='Open Config file', command = openConfigFile)
+Menu_Track.add_command(label='Open Project directory', command = openProjectDirectoryToTrack)
+Menu_Track.add_separator()
+Menu_Track.add_command(label='Begin tracking', command = TrackProject)
+Menu_Track.add_command(label='Clear preview space', command = clearCanvas)
 #%%Notebooks
 style = ttk.Style()
 if theme == 0:

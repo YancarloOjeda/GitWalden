@@ -25,7 +25,7 @@ from tkinter import font
 from tkinter.font import Font
 from tkinter.simpledialog import askstring
 from screeninfo import get_monitors
-from tkinter import Button, Frame, INSERT, LEFT, RIGHT, Label
+from tkinter import Button, Frame, INSERT, LEFT, RIGHT, Label, Checkbutton
 from tkinter import  Scrollbar, Text, Tk, TOP, X, Y, filedialog
 from tkinter import *
 import cv2
@@ -281,8 +281,10 @@ def newProjectAux():
     messagebox.showinfo('WTS-V3','In construction')
 #%%Fun_Image_Rezice  
 def Fun_Image_Rezice(img):
-    Var_Tamaño_Lbl_X = int(((height_monitor/2)*1.99)-(aux_width_monitor*1.4))
-    Var_Tamaño_Lbl_Y = int(((height_monitor/2)*1.37)-(aux_width_monitor*1.3))
+    # Var_Tamaño_Lbl_X = int(((height_monitor/2)*1.99)-(aux_width_monitor*1.4))
+    # Var_Tamaño_Lbl_Y = int(((height_monitor/2)*1.37)-(aux_width_monitor*1.3))
+    Var_Tamaño_Lbl_X = int(aux_width_monitor*7)-2
+    Var_Tamaño_Lbl_Y = int(aux_height_monitor*8)-2
     
     Img_Original = img
     if int(Img_Original.size[0])>=Var_Tamaño_Lbl_X:
@@ -295,14 +297,20 @@ def Fun_Image_Rezice(img):
             Img_Original_2 = Img_Original.resize((Var_Tamaño_Lbl_X,round((Var_Tamaño_Lbl_X/int(Img_Original.size[0]))*int(Img_Original.size[1]))))
     else:
         Img_Original_2 = Img_Original
+        #La siguiente linea reajusta la imagen al tamaño del canvas 
+        # Img_Original_2 = Img_Original.resize((Var_Tamaño_Lbl_X,Var_Tamaño_Lbl_Y))
         
     return(Img_Original_2)
 #%%Fun imageRezicePesNewProject
 def imageRezicePesNewProject(img):
-    Var_Tamaño_Lbl_X = int(aux_width_monitor*3.25)-2
-    Var_Tamaño_Lbl_Y = int(aux_height_monitor*4.7)-2
+    # Var_Tamaño_Lbl_X = int(aux_width_monitor*3.25)-2
+    # Var_Tamaño_Lbl_Y = int(aux_height_monitor*4.7)-2
+    Var_Tamaño_Lbl_X = int(aux_width_monitor*7)-2
+    Var_Tamaño_Lbl_Y = int(aux_height_monitor*8)-2
     
+    print(Var_Tamaño_Lbl_X, Var_Tamaño_Lbl_Y)
     Img_Original = img 
+    print(Img_Original.size[0], Img_Original.size[1])
     
     if int(Img_Original.size[0])>=Var_Tamaño_Lbl_X:
         Img_Original_2 = Img_Original.resize((Var_Tamaño_Lbl_X,round((Var_Tamaño_Lbl_X/int(Img_Original.size[0]))*int(Img_Original.size[1]))))
@@ -314,6 +322,9 @@ def imageRezicePesNewProject(img):
             Img_Original_2 = Img_Original.resize((Var_Tamaño_Lbl_X,round((Var_Tamaño_Lbl_X/int(Img_Original.size[0]))*int(Img_Original.size[1]))))
     else:
         Img_Original_2 = Img_Original
+        #La siguiente linea reajusta la imagen al tamaño del canvas 
+        # Img_Original_2 = Img_Original.resize((Var_Tamaño_Lbl_X,Var_Tamaño_Lbl_Y))
+   
         
     return(Img_Original_2)    
 #%%Fun changeCamera
@@ -560,7 +571,7 @@ def Fun_Take_Video():
             if ret==True:
                 out.write(Img_WebCam)
                 cv2.imshow('Press Esc to abort',Img_WebCam)
-                cv2.moveWindow('Press Esc to abort', int(aux_width_monitor*1), int(aux_height_monitor*2.9))
+                cv2.moveWindow('Press Esc to abort', int(aux_width_monitor*1), int(aux_height_monitor*3.2))
                 
                 key = cv2.waitKey(1)
                 if key == 27:#esc
@@ -610,7 +621,7 @@ def Fun_Test_Video():
                   
         if ret==True:
             cv2.imshow('Press Esc to abort',Img_WebCam)
-            cv2.moveWindow('Press Esc to abort', int(aux_width_monitor*1), int(aux_height_monitor*2.9))
+            cv2.moveWindow('Press Esc to abort', int(aux_width_monitor*1), int(aux_height_monitor*3.2))
             
             key = cv2.waitKey(1)
             if key == 27:
@@ -704,7 +715,7 @@ def openVideo():
         ret, Img_WebCam = Dev_WebCam_Read.read()
         if ret==True:
             cv2.imshow('Press Esc to abort',Img_WebCam)
-            cv2.moveWindow('Press Esc to abort', int(aux_width_monitor*1), int(aux_height_monitor*2.9))
+            cv2.moveWindow('Press Esc to abort', int(aux_width_monitor*1), int(aux_height_monitor*3.2))
             
             time.sleep(0.02)
             key = cv2.waitKey(1)
@@ -803,13 +814,14 @@ def newVideoProject():
     Photo_Img_Original = ImageTk.PhotoImage(Img_Original_2)
     Lbl_Img_Original = tkinter.Label(pesNewProject, image=Photo_Img_Original, bg = Fun_Rgb(C_Primary), bd = 0)
     Lbl_Img_Original.image = Photo_Img_Original
-    Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1)
+    Lbl_Img_Original.place(x = (aux_width_monitor*1), y = (aux_height_monitor*1)+1)
     
     updateSeleccionTrackVideo()
 #%%Fun getValuesSliders
 def getValuesSliders(value):
     global Dialog_Video_File_Aux, Lbl_Img_Original, Dialog_Video_File_Aux_2, Img_Original
     global Ruta_Imagen, Seleccion_Track
+    global LblXAxis, LblYAxis
     
     X1 = Slider_X1.get()
     X2 = Slider_X2.get()
@@ -819,22 +831,18 @@ def getValuesSliders(value):
     
     textEntryX = Etr_Tamano_Caja.get()
     textEntryY = Etr2_Tamano_Caja.get()
-    textEntryZ = Etr3_Tamano_Caja.get()
     
+    LblXAxis.place_forget()
     LblXAxis = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
                              text = textEntryX)
     LblXAxis.config(font = (Font_1,12))
-    LblXAxis.place(x=aux_width_monitor*5.2, y=aux_height_monitor*3.5)
+    LblXAxis.place(x=aux_width_monitor*5.5, y=aux_height_monitor*11.3)
     
+    LblYAxis.place_forget()
     LblYAxis = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
                              text = textEntryY)
     LblYAxis.config(font = (Font_1,12))
-    LblYAxis.place(x=aux_width_monitor*6.8, y=aux_height_monitor*3.5)
-    
-    LblZAxis = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
-                             text = textEntryZ)
-    LblZAxis.config(font = (Font_1,12))
-    LblZAxis.place(x=aux_width_monitor*7, y=aux_height_monitor*2.5)
+    LblYAxis.place(x=aux_width_monitor*6.7, y=aux_height_monitor*11.3)
     
     Lbl_Img_Original.place_forget()
     
@@ -898,7 +906,7 @@ def getValuesSliders(value):
         Pho_Img_Cortable_Aux = ImageTk.PhotoImage(Img_Original_2)
         Lbl_Img_Original = tkinter.Label(pesNewProject, image=Pho_Img_Cortable_Aux, bg = Fun_Rgb(C_Primary), bd = 0)
         Lbl_Img_Original.image = Pho_Img_Cortable_Aux 
-        Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1)
+        Lbl_Img_Original.place(x = (aux_width_monitor*1), y = (aux_height_monitor*1)+1)
     except:
         pass
    
@@ -918,7 +926,7 @@ def getValuesSliders(value):
             Photo_Img_Aux = ImageTk.PhotoImage(Img_Original_2)
             Lbl_Img_Original = tkinter.Label(pesNewProject, image=Photo_Img_Aux, bg = Fun_Rgb(C_Primary), bd = 0)
             Lbl_Img_Original.image = Photo_Img_Aux 
-            Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1)   
+            Lbl_Img_Original.place(x = (aux_width_monitor*1), y = (aux_height_monitor*1)+1)   
         except:
             pass
 #%%Fun_Next_Subject
@@ -955,7 +963,7 @@ def Fun_Next_Subject():
     Photo_Img_Aux = ImageTk.PhotoImage(Img_Original_2)
     Lbl_Img_Original = tkinter.Label(pesNewProject, image=Photo_Img_Aux, bg = Fun_Rgb(C_Primary), bd = 0)
     Lbl_Img_Original.image = Photo_Img_Aux 
-    Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1) 
+    Lbl_Img_Original.place(x = (aux_width_monitor*1), y = (aux_height_monitor*1)+1) 
     
     Mat_RGB[number_subject][:]= Mat_RGB2
     number_subject += 1 
@@ -990,7 +998,6 @@ def saveParameters():
         Rotar = Slider_Grados_Rotar.get()
         textEntryX = Etr_Tamano_Caja.get()
         textEntryY = Etr2_Tamano_Caja.get()
-        textEntryZ = Etr3_Tamano_Caja.get()
         Img_Filtro = Var_Filtro.get()
         Track_MinSize = float(Entr_Valor_Minimo_Animal.get())
         Img_Original = imageio.imread(Dialog_Video_File_Aux)
@@ -1015,7 +1022,7 @@ def saveParameters():
             #Guardar txt
             Arr_Variables = [str(Seleccion_Camara), str(Seleccion_Resolucion),
                              str(X1), str(X2), str(Y1), str(Y2), str(Rotar), 
-                             str(textEntryX), str(textEntryY), str(textEntryZ), 
+                             str(textEntryX), str(textEntryY),  
                              str(Var_R), str(Var_G), str(Var_B),
                              str(Var_Des), str(Var_Umbral), str(Img_Filtro), 
                              str(Track_MinSize), 
@@ -1067,10 +1074,10 @@ def saveParameters():
                 
             Arr_Variables = [str(Seleccion_Camara), str(Seleccion_Resolucion),
                              str(X1), str(X2), str(Y1), str(Y2), str(Rotar), 
-                             str(textEntryX), str(textEntryY), str(textEntryZ), 
+                             str(textEntryX), str(textEntryY), 
                              str(Track_MinSize), 
                              str(Img_WebCam.shape[1]),str(Img_WebCam.shape[0]), 
-                             str(number_subject), str(Seleccion_Track)]  
+                             str(number_subject+1), str(Seleccion_Track)]  
             
             Archivo_Variables = open(Dir_ConfigFiles + '/' + configFileName +'.txt','w')
             cont_Grabar = 0
@@ -1113,21 +1120,13 @@ def putCircleCanvas(canShowDataXY, x, y, r, Mat_RGB):
         colorRGB = (int(Mat_RGB[0]), int(Mat_RGB[1]), int(Mat_RGB[2]))
         colorCircleCanvas = Fun_Rgb(colorRGB)
     
-    if auxColorCircleCanvas % 2 == 0:
-        auxColorB -= 1
-    else:
-        auxColorG -= 1
-        
-    if auxColorB <= 0 or auxColorG <= 0:
-        auxColorG = 0
-        auxColorB = 0
-     
     id = canShowDataXY.create_oval(x-r,y-r,x+r,y+r, fill=colorCircleCanvas)
     # canShowDataXY.create_text(x + r*2, y +r*2,fill="darkblue",font="Times 12 bold",
     #                     text=str(auxColorCircleCanvas))
 
     canShowDataXY.update()    
     return id
+#%%Fun clearCanvas
 def clearCanvas():
     canShowDataXY.delete("all")
 #%%Fun openConfigFile
@@ -1144,7 +1143,7 @@ def openConfigFile():
     lblConfigFile.place_forget()
     lblConfigFile = Label(pesTracking, text='Config: '+str(fileName), bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
     lblConfigFile.config(font = (Font_1,15))
-    lblConfigFile.place(x=aux_width_monitor*5.1, y=aux_height_monitor*1.2)
+    lblConfigFile.place(x=aux_width_monitor*1.2, y=aux_height_monitor*10.1)
     return pathConfigFile 
 #%%Fun openProjectDirectoryToTrack
 def openProjectDirectoryToTrack():
@@ -1157,7 +1156,7 @@ def openProjectDirectoryToTrack():
     lblProjectFile.place_forget()
     lblProjectFile = Label(pesTracking, text='Project: ' + str(directoryName), bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
     lblProjectFile.config(font = (Font_1,15))
-    lblProjectFile.place(x=aux_width_monitor*5.1, y=aux_height_monitor*2.2)
+    lblProjectFile.place(x=aux_width_monitor*1.2, y=aux_height_monitor*11.1)
     return pathDirectoryTrack
 #%%Fun_Distancia
 def Fun_Distancia(x1,x2,y1,y2,DistanciaRelativa):
@@ -1183,12 +1182,11 @@ def TrackProject():
         Rotar = float(arrConfig[6])
         textEntryX = float(arrConfig[7]) 
         textEntryY = float(arrConfig[8]) 
-        textEntryZ = float(arrConfig[9]) 
-        Track_MinSize = float(arrConfig[16]) 
-        Img_WebCam1 = int(arrConfig[17])
-        Img_WebCam0 = int(arrConfig[18])
-        number_subject = int(arrConfig[19])
-        Seleccion_Track = int(arrConfig[20])
+        Track_MinSize = float(arrConfig[9]) 
+        Img_WebCam1 = int(arrConfig[16])
+        Img_WebCam0 = int(arrConfig[17])
+        number_subject = int(arrConfig[18])
+        Seleccion_Track = int(arrConfig[19])
         
         if number_subject == 0:
             Var_R = int(arrConfig[10])
@@ -1259,12 +1257,16 @@ def TrackProject():
                         Img_Filtro[f][0] = e
                         f += 1
                     f = 0
+                
+                
+                
         timeSession = entTime.get()
         subject = entSubject.get()
         session = entSession.get()
         group = entGroup.get()
         sessionName = entSessionName.get()
         saveVideo = Var_SaveVideo.get()
+        showPreview = Var_ShowPreview.get()
         
         if saveVideo != 1:
             saveVideo = 0
@@ -1275,13 +1277,13 @@ def TrackProject():
         Arr_TiempoReal = np.zeros(4)
         Mat_Datos = np.zeros((9999999,6+(number_subject*2)))
     
-        LblAxisX = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg=Fun_Rgb(C_White), text='Axis X = '+str(textEntryX))
+        LblAxisX = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg=Fun_Rgb(C_White), text='X = '+str(textEntryX))
         LblAxisX.config(font = (Font_1,12))
-        LblAxisX.place(x=aux_width_monitor*10.5, y = aux_height_monitor*6.5)
+        LblAxisX.place(x=aux_width_monitor*8.5, y = aux_height_monitor*6.3)
         
-        LblAxisY = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg=Fun_Rgb(C_White), text='Axis Y = '+str(textEntryY))
+        LblAxisY = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg=Fun_Rgb(C_White), text='Y = '+str(textEntryY))
         LblAxisY.config(font = (Font_1,12))
-        LblAxisY.place(x=aux_width_monitor*13.5, y = aux_height_monitor*3)
+        LblAxisY.place(x=aux_width_monitor*12.5, y = aux_height_monitor*3)
        
     except NameError:
         messagebox.showerror("Error", "Config file not found") 
@@ -1316,7 +1318,7 @@ def TrackProject():
                 cv2.putText(Img_WebCam,'T: ',(5,15),Font_CV, .5,(255,255,255),1)
                 cv2.putText(Img_WebCam,str(round(Mat_Datos[Int_Contador-1][0] ,2)),(20,15),Font_CV, .5,(255,255,255),1)
                 cv2.imshow('Tracking',Img_WebCam)
-                cv2.moveWindow('Tracking', 90,220);
+                cv2.moveWindow('Tracking', int(aux_width_monitor*1), int(aux_height_monitor*3.2));
                 cv2.waitKey(5)
                 
                 Mat_Datos[Int_Contador][0] = int(elemento.replace('.jpg',''))  
@@ -1329,12 +1331,14 @@ def TrackProject():
                 Mat_Datos[Int_Contador][4] = Int_Datos_Consecuencia
                 Mat_Datos[Int_Contador][3] = (Fun_Distancia(Mat_Datos[Int_Contador-1][1],Mat_Datos[Int_Contador][1],Mat_Datos[Int_Contador-1][2],Mat_Datos[Int_Contador][2],textEntryX/Img_WebCam1))
                 
-                X_ = (Mat_Datos[Int_Contador][1]*100)/Img_WebCam1
-                X_ = (aux_height_monitor*5)*(X_*.01)
+                if showPreview == 1:
+                    X_ = (Mat_Datos[Int_Contador][1]*100)/Img_WebCam1
+                    X_ = (aux_height_monitor*7)*(X_*.01)
+                    
+                    Y_ = (Mat_Datos[Int_Contador][2]*100)/Img_WebCam0
+                    Y_ = (aux_height_monitor*5)*(Y_*.01)
+                    putCircleCanvas(canShowDataXY, X_, Y_,5,Mat_RGB)
                 
-                Y_ = (Mat_Datos[Int_Contador][2]*100)/Img_WebCam0
-                Y_ = (aux_height_monitor*5)*(Y_*.01)
-                putCircleCanvas(canShowDataXY, X_, Y_,5,Mat_RGB)
                 Int_Contador += 1 
                 
             cv2.destroyAllWindows()
@@ -1416,12 +1420,13 @@ def TrackProject():
                         Mat_Datos_Y[Int_Contador][i] = Mat_Datos_Y[Int_Contador-1][i]
                     Mat_Datos_D[Int_Contador][i] = (Fun_Distancia(Mat_Datos_X[Int_Contador-1][i],Mat_Datos_X[Int_Contador][i],Mat_Datos_Y[Int_Contador-1][i],Mat_Datos_Y[Int_Contador][i],textEntryX/Img_WebCam1))    
                     
-                    X_ = (Mat_Datos_X[Int_Contador][i]*100)/Img_WebCam1
-                    X_ = (aux_height_monitor*5)*(X_*.01)
-                    
-                    Y_ = (Mat_Datos_Y[Int_Contador][i]*100)/Img_WebCam0
-                    Y_ = (aux_height_monitor*5)*(Y_*.01)
-                    putCircleCanvas(canShowDataXY, X_, Y_,5, Mat_RGB[i][:])
+                    if showPreview == 1:
+                        X_ = (Mat_Datos_X[Int_Contador][i]*100)/Img_WebCam1
+                        X_ = (aux_height_monitor*7)*(X_*.01)
+                        
+                        Y_ = (Mat_Datos_Y[Int_Contador][i]*100)/Img_WebCam0
+                        Y_ = (aux_height_monitor*5)*(Y_*.01)
+                        putCircleCanvas(canShowDataXY, X_, Y_,5, Mat_RGB[i][:])
                       
                     image_total += image_aux
                     if i == number_subject -1:
@@ -1432,7 +1437,7 @@ def TrackProject():
                         cv2.putText(image_total,'T: ',(5,15),Font_CV, .5,(255,255,255),1)
                         cv2.putText(image_total,str(round(Mat_Datos[Int_Contador-1][0] ,2)),(20,15),Font_CV, .5,(255,255,255),1)
                         cv2.imshow('Tracking',image_total)
-                        cv2.moveWindow('Tracking', 90,220);
+                        cv2.moveWindow('Tracking', int(aux_width_monitor*1), int(aux_height_monitor*3.2));
                         cv2.waitKey(5)
                     
                     # Mat_Datos[Int_Contador][0] = (int(elemento.replace('image_','').replace('.jpg',''))/int(Int_Frame_2)) * float(Int_Frame)     
@@ -1491,8 +1496,9 @@ def TrackProject():
         Dev_WebCam_Read.set(3,Dev_WebCam_Resolution[0])
         Dev_WebCam_Read.set(4,Dev_WebCam_Resolution[1])
         
-        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-        out = cv2.VideoWriter(Dir_Videos + sessionName + '.mp4',fourcc, 30.0, (640,480))
+        if saveVideo == 1:
+            fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+            out = cv2.VideoWriter(Dir_Videos + sessionName + '.mp4',fourcc, 30.0, (640,480))
 #%%---- 2.1-Live project (from camera) only one subject 
         if number_subject == 0:
             Arr_TiempoReal[0]=time.time()
@@ -1544,7 +1550,7 @@ def TrackProject():
                 cv2.putText(Img_WebCam,'D: ',(5,35),Font_CV, .5,(255,255,255),1)
                 cv2.putText(Img_WebCam,str(round(Int_Contador_Distancia ,2)),(20,35),Font_CV, .5,(255,255,255),1)
                 cv2.imshow('Tracking',Img_WebCam)
-                cv2.moveWindow('Tracking', 90,220);
+                cv2.moveWindow('Tracking', int(aux_width_monitor*1), int(aux_height_monitor*3.2));
                 
                 Mat_Datos[Int_Contador][0] = Arr_TiempoReal[3]
                 try:
@@ -1556,12 +1562,15 @@ def TrackProject():
                 Mat_Datos[Int_Contador][3] = (Fun_Distancia(Mat_Datos[Int_Contador-1][1],Mat_Datos[Int_Contador][1],Mat_Datos[Int_Contador-1][2],Mat_Datos[Int_Contador][2],textEntryX/Img_WebCam1))
                 Mat_Datos[Int_Contador][4] = Int_Datos_Consecuencia
                 Int_Contador_Distancia += Mat_Datos[Int_Contador][3]
-                X_ = (Mat_Datos[Int_Contador][1]*100)/Img_WebCam1
-                X_ = (aux_height_monitor*5)*(X_*.01)
                 
-                Y_ = (Mat_Datos[Int_Contador][2]*100)/Img_WebCam0
-                Y_ = (aux_height_monitor*5)*(Y_*.01)
-                putCircleCanvas(canShowDataXY, X_, Y_,5, Mat_RGB)
+                if showPreview == 1:
+                    X_ = (Mat_Datos[Int_Contador][1]*100)/Img_WebCam1
+                    X_ = (aux_height_monitor*7)*(X_*.01)
+                    
+                    Y_ = (Mat_Datos[Int_Contador][2]*100)/Img_WebCam0
+                    Y_ = (aux_height_monitor*5)*(Y_*.01)
+                    putCircleCanvas(canShowDataXY, X_, Y_,5, Mat_RGB)
+                
                 Int_Contador += 1          
     
                 Arr_TiempoReal[1]=time.time()
@@ -1576,6 +1585,7 @@ def TrackProject():
                
             Dev_WebCam_Read.release()
             cv2.destroyAllWindows()
+            
             if saveVideo == 1:
                 out.release()
        
@@ -1713,13 +1723,13 @@ def TrackProject():
                         Mat_Datos_Y[Int_Contador][i] = Mat_Datos_Y[Int_Contador-1][i]
                     Mat_Datos_D[Int_Contador][i] = (Fun_Distancia(Mat_Datos_X[Int_Contador-1][i],Mat_Datos_X[Int_Contador][i],Mat_Datos_Y[Int_Contador-1][i],Mat_Datos_Y[Int_Contador][i],textEntryX/Img_WebCam1))  
                     
-                    X_ = (Mat_Datos_X[Int_Contador][i]*100)/Img_WebCam1
-                    X_ = (aux_height_monitor*5)*(X_*.01)
-                    
-                    Y_ = (Mat_Datos_Y[Int_Contador][i]*100)/Img_WebCam0
-                    Y_ = (aux_height_monitor*5)*(Y_*.01)
-                    putCircleCanvas(canShowDataXY, X_, Y_,5, Mat_RGB[i][:])
-                    
+                    if showPreview == 1:
+                        X_ = (Mat_Datos_X[Int_Contador][i]*100)/Img_WebCam1
+                        X_ = (aux_height_monitor*7)*(X_*.01)
+                        
+                        Y_ = (Mat_Datos_Y[Int_Contador][i]*100)/Img_WebCam0
+                        Y_ = (aux_height_monitor*5)*(Y_*.01)
+                        putCircleCanvas(canShowDataXY, X_, Y_,5, Mat_RGB[i][:])
                     
                     image_total += image_aux
                     if i == number_subject -1:
@@ -1730,7 +1740,7 @@ def TrackProject():
                         cv2.putText(image_total,'T: ',(5,15),Font_CV, .5,(255,255,255),1)
                         cv2.putText(image_total,str(round((Arr_TiempoReal[3]) ,2)),(65,15),Font_CV, .5,(255,255,255),1)
                         cv2.imshow('Tracking',image_total)
-                        cv2.moveWindow('Tracking', 90,220);
+                        cv2.moveWindow('Tracking', int(aux_width_monitor*1), int(aux_height_monitor*3.2));
                         cv2.waitKey(5)
                       
                         
@@ -1750,6 +1760,7 @@ def TrackProject():
                     
             Dev_WebCam_Read.release()
             cv2.destroyAllWindows()
+            
             if saveVideo == 1:
                 out.release()
             
@@ -1864,7 +1875,7 @@ def Fun_Nuevo_Proyecto_Vivo():
     Photo_Img_Aux = ImageTk.PhotoImage(Img_Original_2)
     Lbl_Img_Original = tkinter.Label(pesNewProject, image=Photo_Img_Aux, bg = Fun_Rgb(C_Primary), bd = 0)
     Lbl_Img_Original.image = Photo_Img_Aux 
-    Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1) 
+    Lbl_Img_Original.place(x = (aux_width_monitor*1), y = (aux_height_monitor*1)+1) 
     
     def Fun_Borrar_Y_Tomar_Nueva():
         os.remove(Ruta_Carpeta_Imagenes+'Image_1.jpg')
@@ -1891,7 +1902,7 @@ def Fun_Nuevo_Proyecto_Vivo():
         Photo_Img_Aux = ImageTk.PhotoImage(Img_Original_2)
         Lbl_Img_Original = tkinter.Label(pesNewProject, image=Photo_Img_Aux, bg = Fun_Rgb(C_Primary), bd = 0)
         Lbl_Img_Original.image = Photo_Img_Aux 
-        Lbl_Img_Original.place(x = (aux_width_monitor*.7), y = (aux_height_monitor*1)+1) 
+        Lbl_Img_Original.place(x = (aux_width_monitor*1), y = (aux_height_monitor*1)+1) 
         
         
         mensaje1 = messagebox.askyesno(message= 'Take another picture?', title="Picture")
@@ -1928,82 +1939,107 @@ root.config(bg = Fun_Rgb(C_Primary))
 root.isStopped = False
 
 Lbl_Img_Original = Label(root, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+LblXAxis = tkinter.Label(root, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+LblYAxis = tkinter.Label(root, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
 #%%Toolbar and menu
 toolbar = Frame(root)
 
-img1 = PIL.Image.open(Dir_Images+'options.png')
-useImg1 = ImageTk.PhotoImage(img1)
-img2 = PIL.Image.open(Dir_Images+'cut_video.png')
-useImg2 = ImageTk.PhotoImage(img2)
-img3 = PIL.Image.open(Dir_Images+'newVideoProject.png')
-useImg3 = ImageTk.PhotoImage(img3)
-img4 = PIL.Image.open(Dir_Images+'open.png')
-useImg4 = ImageTk.PhotoImage(img4)
-img5 = PIL.Image.open(Dir_Images+'video.jpg')
-useImg5 = ImageTk.PhotoImage(img5)
+imgSettings = PIL.Image.open(Dir_Images+'settings.png')
+useImgSettings= ImageTk.PhotoImage(imgSettings)
+imgCutVideo = PIL.Image.open(Dir_Images+'cutVideo.png')
+useImgCutVideo = ImageTk.PhotoImage(imgCutVideo)
+imgOpenImageProject = PIL.Image.open(Dir_Images+'imageProject.png')
+useImgOpenImageProject = ImageTk.PhotoImage(imgOpenImageProject)
+imgOpenVideoProject = PIL.Image.open(Dir_Images+'videoProject.png')
+useImgOpenVideoProject = ImageTk.PhotoImage(imgOpenVideoProject)
+imgConfigImage = PIL.Image.open(Dir_Images+'configImage.png')
+useImgConfigImage = ImageTk.PhotoImage(imgConfigImage)
+imgConfigLive = PIL.Image.open(Dir_Images+'configLive.png')
+useImgConfigLive = ImageTk.PhotoImage(imgConfigLive)
+imgGetRGB = PIL.Image.open(Dir_Images+'rgb.png')
+useImgGetRGB = ImageTk.PhotoImage(imgGetRGB)
+imgOpenConfigFile = PIL.Image.open(Dir_Images+'openConfigFile.png')
+useImgOpenConfigFile = ImageTk.PhotoImage(imgOpenConfigFile)
+imgOpenDirectory = PIL.Image.open(Dir_Images+'openDirectory.png')
+useImgOpenDirectory = ImageTk.PhotoImage(imgOpenDirectory)
+
 img6 = PIL.Image.open(Dir_Images+'changeCamera.png')
 useImg6 = ImageTk.PhotoImage(img6)
-img7 = PIL.Image.open(Dir_Images+'openVideo.png')
-useImg7 = ImageTk.PhotoImage(img7)
-# img8 = PIL.Image.open(Dir_Images+'data.png')
-# useImg8 = ImageTk.PhotoImage(img8)
-# img9 = PIL.Image.open(Dir_Images+'user.png')
-# useImg9 = ImageTk.PhotoImage(img9)
 
-
-iconTool_Options = Button(toolbar, image=useImg1, text="Settings", width=20, command=openSettings)
+iconTool_Options = Button(toolbar, image=useImgSettings, text="Settings", command=openSettings)
 iconTool_Options.pack(side=LEFT, padx=2, pady=2)
 CreateToolTip(iconTool_Options, text = 'Settings')
 
-iconTool_CutVideo = Button(toolbar, image=useImg5, text="Select video to cut", width=20, command=SelectVideo)
+iconTool_CutVideo = Button(toolbar, image=useImgCutVideo, text="Select video to cut", command=SelectVideo)
 iconTool_CutVideo.pack(side=LEFT, padx=2, pady=2)
-CreateToolTip(iconTool_CutVideo, text = 'Select video to cut')
+CreateToolTip(iconTool_CutVideo, text = 'Cut video')
 
-iconOpneImageProject = Button(toolbar, image=useImg7, text="Open image project", width=20, command=openImage)
+iconOpneImageProject = Button(toolbar, image=useImgOpenImageProject, text="Open image project", command=openImage)
 iconOpneImageProject.pack(side=LEFT, padx=2, pady=2)
 CreateToolTip(iconOpneImageProject, text = 'Open image project')
 
-iconOpenVideo = Button(toolbar, image=useImg2, text="Open video project", width=20, command=openVideo)
+iconOpenVideo = Button(toolbar, image=useImgOpenVideoProject, text="Open video project", command=openVideo)
 iconOpenVideo.pack(side=LEFT, padx=2, pady=2)
 CreateToolTip(iconOpenVideo, text = 'Open video project')
 
-iconNewProject = Button(toolbar, image=useImg3, text="New video project", width=20, command=newVideoProject)
-iconNewProject.pack(side=LEFT, padx=2, pady=2)
-CreateToolTip(iconNewProject, text = 'New video project')
+iconNewVideoProject = Button(toolbar, image=useImgConfigImage, text="Image project", command=newVideoProject)
+iconNewVideoProject.pack(side=LEFT, padx=2, pady=2)
+CreateToolTip(iconNewVideoProject, text = 'Config image project')
 
+iconNewLiveProject = Button(toolbar, image=useImgConfigLive, text="Live project", command= Fun_Nuevo_Proyecto_Vivo)
+iconNewLiveProject.pack(side=LEFT, padx=2, pady=2)
+CreateToolTip(iconNewLiveProject, text = 'Config live project')
 
+iconOpenObservation = Button(toolbar, image=useImgGetRGB, text="Get RGB values", command= Fun_Get_RGB)
+iconOpenObservation.pack(side=LEFT, padx=2, pady=2)
+CreateToolTip(iconOpenObservation, text = 'Get RGB values')
 
-# iconNewObservation = Button(toolbar, image=useImg6, text="Observation", width=20, command= openProject)
-# iconNewObservation.pack(side=LEFT, padx=2, pady=2)
-# CreateToolTip(iconNewObservation, text = 'New observation')
+closeButton = Button(toolbar, image=useImgOpenConfigFile, text="Open config file", command=openConfigFile)
+closeButton.pack(side=LEFT, padx=2, pady=2)
+CreateToolTip(closeButton, text = 'Open config file')
 
-# iconOpenObservation = Button(toolbar, image=useImg7, text="Observation", width=20, command= openObservation)
-# iconOpenObservation.pack(side=LEFT, padx=2, pady=2)
-# CreateToolTip(iconOpenObservation, text = 'Open observation')
-
-# closeButton = Button(toolbar, image=useImg8, text="Data", width=20)#, command=close_WPI_Connection)
-# closeButton.pack(side=LEFT, padx=2, pady=2)
-# CreateToolTip(closeButton, text = 'Data analysis')
-
-# checkInputButton = Button(toolbar, image=useImg9, text="User", width=20)#, command=check_Input_1)
-# checkInputButton.pack(side=LEFT, padx=2, pady=2)
-# CreateToolTip(checkInputButton, text = 'User information')
+checkInputButton = Button(toolbar, image=useImgOpenDirectory, text="Open directory", command=openProjectDirectoryToTrack)
+checkInputButton.pack(side=LEFT, padx=2, pady=2)
+CreateToolTip(checkInputButton, text = 'Open directory')
 
 toolbar.pack(side=TOP, fill=X)
 
 menubar = tkinter.Menu(root)
 root.config(menu=menubar)
 
-Menu_Opc1 = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
+if theme == 1:
+    Menu_Opc1 = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
+                                 activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Light_Dark),
+                                 tearoff=0) 
+    Menu_Videos = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
                              activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Light_Dark),
-                             tearoff=0)                         
+                             tearoff=1)   
+    Menu_Config = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
+                             activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Light_Dark),
+                             tearoff=0)
+    Menu_Track = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
+                             activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Light_Dark),
+                             tearoff=0) 
+elif theme == 0:
+    Menu_Opc1 = tkinter.Menu(root, bg=Fun_Rgb(C_Dark), fg=Fun_Rgb(C_White),
+                                 activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Dark),
+                                 tearoff=0)  
+    Menu_Videos = tkinter.Menu(root, bg=Fun_Rgb(C_Dark), fg=Fun_Rgb(C_White),
+                                 activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Dark),
+                                 tearoff=0)  
+    Menu_Config = tkinter.Menu(root, bg=Fun_Rgb(C_Dark), fg=Fun_Rgb(C_White),
+                                 activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Dark),
+                                 tearoff=0) 
+    Menu_Track = tkinter.Menu(root, bg=Fun_Rgb(C_Dark), fg=Fun_Rgb(C_White),
+                                 activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Dark),
+                                 tearoff=0)                        
 menubar.add_cascade(label="File", menu=Menu_Opc1)
 Menu_Opc1.add_command(label='Select video to cut', command=SelectVideo)
 Menu_Opc1.add_command(label='Open image project', command=openImage) 
 Menu_Opc1.add_command(label='Open video', command=openVideo) 
 Menu_Opc1.add_separator()
-Menu_Opc1.add_command(label='Video project', command = newVideoProject)
-Menu_Opc1.add_command(label='Live project', command = Fun_Nuevo_Proyecto_Vivo)
+Menu_Opc1.add_command(label='Config image project', command = newVideoProject)
+Menu_Opc1.add_command(label='Config live project', command = Fun_Nuevo_Proyecto_Vivo)
 Menu_Opc1.add_command(label='Get RGB values', command = Fun_Get_RGB)
 Menu_Opc1.add_separator()
 Menu_Opc1.add_command(label='Data analysis')
@@ -2011,15 +2047,25 @@ Menu_Opc1.add_command(label='User information')
 Menu_Opc1.add_separator()
 Menu_Opc1.add_command(label='Settings', command = openSettings)
 Menu_Opc1.add_separator()
-Menu_Opc1.add_command(label='License', command=info)  
-
-Menu_Track = tkinter.Menu(root, bg=Fun_Rgb(C_White), fg=Fun_Rgb(C_Primary),
-                             activebackground=Fun_Rgb(C_Grey), activeforeground=Fun_Rgb(C_Light_Dark),
-                             tearoff=0)                         
-menubar.add_cascade(label="Config file", menu=Menu_Track)
-Menu_Track.add_command(label='Video project', command = newVideoProject)
-Menu_Track.add_command(label='Live project', command = Fun_Nuevo_Proyecto_Vivo)
-Menu_Track.add_command(label='Get RGB values', command = Fun_Get_RGB)
+Menu_Opc1.add_command(label='License', command=info)
+                     
+menubar.add_cascade(label="Videos", menu=Menu_Videos)
+Menu_Videos.add_command(label='Select video to cut', command=SelectVideo)
+Menu_Videos.add_command(label='Open image project', command=openImage) 
+Menu_Videos.add_command(label='Open video', command=openVideo)   
+                         
+menubar.add_cascade(label="Config file", menu=Menu_Config)
+Menu_Config.add_command(label='Video project', command = newVideoProject)
+Menu_Config.add_command(label='Live project', command = Fun_Nuevo_Proyecto_Vivo)
+Menu_Config.add_separator()
+Menu_Config.add_command(label='Get RGB values', command = Fun_Get_RGB)
+                    
+menubar.add_cascade(label="Tracking", menu=Menu_Track)
+Menu_Track.add_command(label='Open Config file', command = openConfigFile)
+Menu_Track.add_command(label='Open Project directory', command = openProjectDirectoryToTrack)
+Menu_Track.add_separator()
+Menu_Track.add_command(label='Start tracking', command = TrackProject)
+Menu_Track.add_command(label='Clear preview space', command = clearCanvas)
 #%%Notebooks
 style = ttk.Style()
 if theme == 0:
@@ -2059,9 +2105,9 @@ pesCutVideo = tkinter.Frame(notebook, background = Fun_Rgb(C_Light_Dark))
 pesNewProject = tkinter.Frame(notebook, background = Fun_Rgb(C_Light_Dark))
 pesTracking = tkinter.Frame(notebook, background = Fun_Rgb(C_Light_Dark))
 
-notebook.add(pesNewProject, text = 'New project')
-notebook.add(pesTracking, text= 'Track')
 notebook.add(pesCutVideo, text = 'Videos', compound=LEFT)
+notebook.add(pesNewProject, text = 'Config file')
+notebook.add(pesTracking, text= 'Tracking')
 #%%-------------WIDGETS NOTEBOOK VIDEOS-------------
 #%%Canvas notebook Videos
 canTittle = Canvas(pesCutVideo, width=int(width_monitor), height=int(aux_height_monitor*14), bg=Fun_Rgb(C_Primary))
@@ -2312,188 +2358,115 @@ R4 = Radiobutton(pesCutVideo, bg=Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_
     text="1280x800", variable=opcion, value=4, command=FunSetResolution)
 R4.config(font=('Arial', 12))
 R4.place(x=aux_width_monitor*11.5, y=aux_height_monitor*7.2)
-#%%-------------WIDGETS NEW PROJECT-------------
+#%%-------------WIDGETS NOTBOOK CONFIG PROJECTS-------------
 #%%Canvas notebook pesNewProject
 canNewProject = Canvas(pesNewProject, width=int(width_monitor), height=int(aux_height_monitor*14), bg=Fun_Rgb(C_Primary))
 
 #left side
-canNewProject.create_rectangle(int(aux_width_monitor*.7), int(aux_height_monitor*1), 
-                               int(aux_width_monitor*4.75), int(aux_width_monitor*3.2), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
-canNewProject.create_rectangle(int(aux_width_monitor*.7), int(aux_height_monitor*7),
-                               int(aux_width_monitor*4.75), int(aux_width_monitor*6.6), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
+# canNewProject.create_rectangle(int(aux_width_monitor*.7), int(aux_height_monitor*1), 
+#                                int(aux_width_monitor*4.75), int(aux_width_monitor*3.2), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
         
-# canNewProject.create_rectangle(int(aux_width_monitor*1), int(aux_height_monitor*1), int(aux_width_monitor*8), int(aux_height_monitor*9), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
+canNewProject.create_rectangle(int(aux_width_monitor*1), int(aux_height_monitor*1), int(aux_width_monitor*8), int(aux_height_monitor*9), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
 canNewProject.place(x=0,y=0) 
 #%%Sliders notebook pesNewProject (cut image)
 #-------------------- Sliders to cut images (left side) --------------------
 Slider_X1 = tkinter.Scale(pesNewProject, 
             from_=0, to=.5, resolution=0.01,
-            orient=tkinter.HORIZONTAL, width = aux_height_monitor*.3,  length=aux_width_monitor*2,
+            orient=tkinter.HORIZONTAL, width = aux_height_monitor*.3,  length=aux_width_monitor*3.4,
             fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
             activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
             showvalue=1, command = getValuesSliders)
 Slider_X1.config(font=(Font_1,11))
-Slider_X1.place(x=int(aux_width_monitor*.7), y=int(aux_height_monitor*.1))
+Slider_X1.place(x=int(aux_width_monitor*1), y=int(aux_height_monitor*.1))
 
 Slider_X2 = tkinter.Scale(pesNewProject, 
             from_=.51, to=1, resolution=0.01,
-            orient=tkinter.HORIZONTAL, width = aux_height_monitor*.3,  length=aux_width_monitor*2,
+            orient=tkinter.HORIZONTAL, width = aux_height_monitor*.3,  length=aux_width_monitor*3.4,
             fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
             activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
             showvalue=1, command = getValuesSliders)
 Slider_X2.config(font=(Font_1,11))
 Slider_X2.set(1)
-Slider_X2.place(x=aux_width_monitor*2.8, y=aux_height_monitor*.1)
+Slider_X2.place(x=aux_width_monitor*4.6, y=aux_height_monitor*.1)
 
 Slider_Y1 = tkinter.Scale(pesNewProject,
             from_=0, to=.5, resolution=0.01,
-            orient=tkinter.VERTICAL, width = aux_height_monitor*.3,  length=aux_height_monitor*2.2,
+            orient=tkinter.VERTICAL, width = aux_height_monitor*.3,  length=aux_height_monitor*3.9,
             fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
             activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
             showvalue=1, command = getValuesSliders)
 Slider_Y1.config(font=(Font_1,11))
-Slider_Y1.place(x=aux_width_monitor*.1, y=aux_height_monitor*1)
+Slider_Y1.place(x=aux_width_monitor*.2, y=aux_height_monitor*1)
 
 Slider_Y2 = tkinter.Scale(pesNewProject, 
             from_=.51, to=1, resolution=0.01,
-            orient=tkinter.VERTICAL, width = aux_height_monitor*.3,  length=aux_height_monitor*2.2,
+            orient=tkinter.VERTICAL, width = aux_height_monitor*.3,  length=aux_height_monitor*3.9,
             fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
             activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
             showvalue=1, command = getValuesSliders)
 Slider_Y2.config(font=(Font_1,11))
 Slider_Y2.set(1)
-Slider_Y2.place(x=aux_width_monitor*.1, y=aux_height_monitor*3.6)
+Slider_Y2.place(x=aux_width_monitor*.2, y=aux_height_monitor*5.1)
 
 
 Slider_Grados_Rotar = tkinter.Scale(pesNewProject, 
             from_=-180, to=180, resolution=1,
-            orient=tkinter.HORIZONTAL, width = aux_height_monitor*.3,  length=aux_width_monitor*2.5,
+            orient=tkinter.HORIZONTAL, width = aux_height_monitor*.3,  length=aux_width_monitor*3.5,
             fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
             activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
             showvalue=1, command = getValuesSliders)
 Slider_Grados_Rotar.config(font = (Font_1,10))
 Slider_Grados_Rotar.set(0)
-Slider_Grados_Rotar.place(x=aux_width_monitor*5, y=aux_height_monitor*5)
-
-
-Slider2_X1 = tkinter.Scale(pesNewProject, 
-        from_=0, to=.5, resolution=0.01,
-        orient=tkinter.HORIZONTAL, width = aux_height_monitor*.3,  length=aux_width_monitor*2,
-        fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
-        activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
-        showvalue=1)
-Slider2_X1.config(font=(Font_1,11))
-Slider2_X1.place(x=int(aux_width_monitor*.7), y=int(aux_height_monitor*6))
-
-Slider2_X2 = tkinter.Scale(pesNewProject, 
-        from_=.51, to=1, resolution=0.01,
-        orient=tkinter.HORIZONTAL, width = aux_height_monitor*.3,  length=aux_width_monitor*2,
-        fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
-        activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
-        showvalue=1)
-Slider2_X2.config(font=(Font_1,11))
-Slider2_X2.set(1)
-Slider2_X2.place(x=aux_width_monitor*2.8, y=aux_height_monitor*6)
-
-Slider2_Y1 = tkinter.Scale(pesNewProject,
-        from_=0, to=.5, resolution=0.01,
-        orient=tkinter.VERTICAL, width = aux_height_monitor*.3,  length=aux_height_monitor*2.2,
-        fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
-        activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
-        showvalue=1)
-Slider2_Y1.config(font=(Font_1,11))
-Slider2_Y1.place(x=aux_width_monitor*.1, y=aux_height_monitor*7)
-
-Slider2_Y2 = tkinter.Scale(pesNewProject, 
-        from_=.51, to=1, resolution=0.01,
-        orient=tkinter.VERTICAL, width = aux_height_monitor*.3,  length=aux_height_monitor*2.2,
-        fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
-        activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
-        showvalue=1)
-Slider2_Y2.config(font=(Font_1,11))
-Slider2_Y2.set(1)
-Slider2_Y2.place(x=aux_width_monitor*.1, y=aux_height_monitor*9.6)
-
-
-Slider2_Grados_Rotar = tkinter.Scale(pesNewProject, 
-        from_=-90, to=90, resolution=1,
-        orient=tkinter.HORIZONTAL, width = aux_height_monitor*.3,  length=aux_width_monitor*2.5,
-        fg=Fun_Rgb(C_White), bg=Fun_Rgb(C_Primary), bd = 0,
-        activebackground=Fun_Rgb(C_Primary), troughcolor= Fun_Rgb(C_Light_Dark), 
-        showvalue=1)
-Slider2_Grados_Rotar.config(font = (Font_1,11))
-Slider2_Grados_Rotar.set(0)
-Slider2_Grados_Rotar.place(x=aux_width_monitor*5, y=aux_height_monitor*10.5)
+Slider_Grados_Rotar.place(x=aux_width_monitor*1, y=aux_height_monitor*9.7)
 #%%Labels notebook pesNewProject (cut image)
 Lbl_Slider_Grados_Rotar = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                               text = 'Degrees')
-Lbl_Slider_Grados_Rotar.config(font=(Font_1,12))
-Lbl_Slider_Grados_Rotar.place(x=aux_width_monitor*4.9, y=aux_height_monitor*4.5)
-
-Lbl2_Slider_Grados_Rotar = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
-                              text = 'Degrees')
-Lbl2_Slider_Grados_Rotar.config(font=(Font_1,12))
-Lbl2_Slider_Grados_Rotar.place(x=aux_width_monitor*4.9, y=aux_height_monitor*10)
+Lbl_Slider_Grados_Rotar.config(font=(Font_1,15))
+Lbl_Slider_Grados_Rotar.place(x=aux_width_monitor*1, y=aux_height_monitor*9.1)
 
 Lbl_Etr_Tamano_Caja = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
                               text = 'X axis')
 Lbl_Etr_Tamano_Caja.config(font=(Font_1,14))
-Lbl_Etr_Tamano_Caja.place(x=aux_width_monitor*5.3, y=aux_height_monitor*6.7)
+Lbl_Etr_Tamano_Caja.place(x=aux_width_monitor*1, y=aux_height_monitor*10.7)
 
 Lbl_Etr_Tamano_Caja_cm = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
                               text = '(cm)')
 Lbl_Etr_Tamano_Caja_cm.config(font=(Font_1,14))
-Lbl_Etr_Tamano_Caja_cm.place(x=aux_width_monitor*7, y=aux_height_monitor*6.7)
+Lbl_Etr_Tamano_Caja_cm.place(x=aux_width_monitor*2.7, y=aux_height_monitor*10.7)
 
 Lbl2_Etr_Tamano_Caja = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
                               text = 'Y axis')
 Lbl2_Etr_Tamano_Caja.config(font=(Font_1,14))
-Lbl2_Etr_Tamano_Caja.place(x=aux_width_monitor*5.3, y=aux_height_monitor*7.7)
+Lbl2_Etr_Tamano_Caja.place(x=aux_width_monitor*1, y=aux_height_monitor*11.5)
 
 Lbl2_Etr_Tamano_Caja_cm = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                               text = '(cm)')
 Lbl2_Etr_Tamano_Caja_cm.config(font=(Font_1,14))
-Lbl2_Etr_Tamano_Caja_cm.place(x=aux_width_monitor*7, y=aux_height_monitor*7.7)
-
-Lbl3_Etr_Tamano_Caja = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
-                              text = 'Z axis')
-Lbl3_Etr_Tamano_Caja.config(font=(Font_1,14))
-Lbl3_Etr_Tamano_Caja.place(x=aux_width_monitor*5.3, y=aux_height_monitor*8.7)
-
-Lbl3_Etr_Tamano_Caja_cm = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
-                              text = '(cm)')
-Lbl3_Etr_Tamano_Caja_cm.config(font=(Font_1,14))
-Lbl3_Etr_Tamano_Caja_cm.place(x=aux_width_monitor*7, y=aux_height_monitor*8.7)
+Lbl2_Etr_Tamano_Caja_cm.place(x=aux_width_monitor*2.7, y=aux_height_monitor*11.5)
 #%%Entries notebook pesNewProject (cut image) 
 Etr_Tamano_Caja = tkinter.Entry(pesNewProject, width = 8, bg = Fun_Rgb(C_Light_Dark),
                                 fg = Fun_Rgb(C_White))
 Etr_Tamano_Caja.config(font = (Font_1,13))
-Etr_Tamano_Caja.place(x=aux_width_monitor*6, y=aux_height_monitor*6.7)
+Etr_Tamano_Caja.place(x=aux_width_monitor*1.7, y=aux_height_monitor*10.7)
 Etr_Tamano_Caja.insert(0,'1')
 
 Etr2_Tamano_Caja = tkinter.Entry(pesNewProject, width = 8, bg = Fun_Rgb(C_Light_Dark),
                                 fg = Fun_Rgb(C_White))
 Etr2_Tamano_Caja.config(font = (Font_1,13))
-Etr2_Tamano_Caja.place(x=aux_width_monitor*6, y=aux_height_monitor*7.7)
+Etr2_Tamano_Caja.place(x=aux_width_monitor*1.7, y=aux_height_monitor*11.5)
 Etr2_Tamano_Caja.insert(0,'1')
-
-Etr3_Tamano_Caja = tkinter.Entry(pesNewProject, width = 8, bg = Fun_Rgb(C_Light_Dark),
-                                fg = Fun_Rgb(C_White))
-Etr3_Tamano_Caja.config(font = (Font_1,13))
-Etr3_Tamano_Caja.place(x=aux_width_monitor*6, y=aux_height_monitor*8.7)
-Etr3_Tamano_Caja.insert(0,'1')
 #%%Sliders notebook pesNewProject (edit image)
 #-------------------- Sliders to edit images (right side) -------------------- 
 Lbl_Slider_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                              text = 'Color')
 Lbl_Slider_1.config(font=(Font_1,20))
-Lbl_Slider_1.place(x=aux_width_monitor*8, y=aux_height_monitor*.2)
+Lbl_Slider_1.place(x=aux_width_monitor*8.2, y=aux_height_monitor*.2)
 
 #Slider 1
 Lbl_Slider_RojoText_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                                       text = 'R')
 Lbl_Slider_RojoText_1.config(font = (Font_1,20))
-Lbl_Slider_RojoText_1.place(x=aux_width_monitor*8, y=aux_height_monitor*1)
+Lbl_Slider_RojoText_1.place(x=aux_width_monitor*8.2, y=aux_height_monitor*1)
 
 Slider_Rojo = tkinter.Scale(pesNewProject, 
         from_=0, to=255, resolution=1,
@@ -2503,13 +2476,13 @@ Slider_Rojo = tkinter.Scale(pesNewProject,
         showvalue=1, command = getValuesSliders)    
 Slider_Rojo.set(255)
 Slider_Rojo.config(font = (Font_1,12))
-Slider_Rojo.place(x=aux_width_monitor*8.3, y=aux_height_monitor*1)
+Slider_Rojo.place(x=aux_width_monitor*8.5, y=aux_height_monitor*1)
 
 #Slider 2
 Lbl_Slider_VerdeText_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
                                        text = 'G')
 Lbl_Slider_VerdeText_1.config(font = (Font_1,20))
-Lbl_Slider_VerdeText_1.place(x=aux_width_monitor*8, y=aux_height_monitor*2.2)
+Lbl_Slider_VerdeText_1.place(x=aux_width_monitor*8.2, y=aux_height_monitor*2.1)
 
 Slider_Verde = tkinter.Scale(pesNewProject, 
         from_=0, to=255, resolution=1,
@@ -2519,13 +2492,13 @@ Slider_Verde = tkinter.Scale(pesNewProject,
         showvalue=1, command = getValuesSliders)
 Slider_Verde.set(255)
 Slider_Verde.config(font = (Font_1,12))
-Slider_Verde.place(x=aux_width_monitor*8.3, y=aux_height_monitor*2)
+Slider_Verde.place(x=aux_width_monitor*8.5, y=aux_height_monitor*2)
 
 #Slider 3
 Lbl_Slider_AzulText_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                                       text = 'B')
 Lbl_Slider_AzulText_1.config(font = (Font_1,20))
-Lbl_Slider_AzulText_1.place(x=aux_width_monitor*8, y=aux_height_monitor*3)
+Lbl_Slider_AzulText_1.place(x=aux_width_monitor*8.2, y=aux_height_monitor*3)
 Slider_Azul = tkinter.Scale(pesNewProject, 
         from_=0, to=255, resolution=1,
         orient=tkinter.HORIZONTAL, width = aux_height_monitor*.4,  length=aux_width_monitor*2.5,
@@ -2534,13 +2507,14 @@ Slider_Azul = tkinter.Scale(pesNewProject,
         showvalue=1, command = getValuesSliders)
 Slider_Azul.set(255)
 Slider_Azul.config(font = (Font_1,12))
-Slider_Azul.place(x=aux_width_monitor*8.3, y=aux_height_monitor*3)
+Slider_Azul.place(x=aux_width_monitor*8.5, y=aux_height_monitor*3)
 
 #Slider Desviación
 Lbl_Slider_Desviacio = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                              text = 'Range')
 Lbl_Slider_Desviacio.config(font=(Font_1,15))
 Lbl_Slider_Desviacio.place(x=aux_width_monitor*13.5, y=aux_height_monitor*.2)
+
 Slider_Desviacion = tkinter.Scale(pesNewProject, 
         from_=0, to=150, resolution=1,
         orient=tkinter.VERTICAL, width = aux_height_monitor*.3,  length= aux_width_monitor*2,
@@ -2557,18 +2531,18 @@ Cuadro_Rgb2 =  Rgb_Can.create_rectangle(0, 0, aux_width_monitor*.7, aux_width_mo
 Cuadro_Rgb1 =  Rgb_Can.create_rectangle(aux_width_monitor*.7, 0, aux_width_monitor*1.4, aux_width_monitor*2.1, outline=Fun_Rgb(C_White), width=0)
 Cuadro_Rgb3 =  Rgb_Can.create_rectangle(aux_width_monitor*1.4, 0, aux_width_monitor*2.1, aux_width_monitor*2.1, outline=Fun_Rgb(C_White
                                                                                                                                 ), width=0)
-Rgb_Can.place(x=aux_width_monitor*11.15, y=aux_height_monitor*.5)  
+Rgb_Can.place(x=aux_width_monitor*11.2, y=aux_height_monitor*.7)  
 
 imgCubo = Fun_Size(Dir_Images  +'cubo2.png',.2*aux_size)
 lblCubo = Label(pesNewProject, bg = Fun_Rgb(C_Primary), 
                                     image = imgCubo)
-lblCubo.place(x=aux_width_monitor*5.5,y=aux_height_monitor*1.5)
+lblCubo.place(x=aux_width_monitor*5.5,y=aux_height_monitor*9.2)
 
 #filtros
 Lbl_Filtro_1 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),
                              text = 'Filter')
 Lbl_Filtro_1.config(font = (Font_1,20))
-Lbl_Filtro_1.place(x=aux_width_monitor*8, y=aux_height_monitor*4.5)
+Lbl_Filtro_1.place(x=aux_width_monitor*8.2, y=aux_height_monitor*4.5)
 
 Var_Filtro = tkinter.IntVar()
 RdBtn_1 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
@@ -2577,14 +2551,14 @@ RdBtn_1 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
                               text="Black & White - Weak  ", variable=Var_Filtro, 
                               value=1, indicatoron=0, width = 23, command = lambda: getValuesSliders(1))
 RdBtn_1.config(font = (Font_1,15))
-RdBtn_1.place(x=aux_width_monitor*8, y=aux_height_monitor*5.4)
+RdBtn_1.place(x=aux_width_monitor*8.2, y=aux_height_monitor*5.4)
 RdBtn_2 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
                               bg = Fun_Rgb(C_Light_Dark), 
                               activebackground=Fun_Rgb(C_White),
                               text="Black & White - Strong", variable=Var_Filtro, 
                               value=2, indicatoron=0, width = 23, command = lambda: getValuesSliders(2))
 RdBtn_2.config(font = (Font_1,15))
-RdBtn_2.place(x=aux_width_monitor*8, y=aux_height_monitor*6.2)
+RdBtn_2.place(x=aux_width_monitor*8.2, y=aux_height_monitor*6.2)
 RdBtn_3 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
                               bg = Fun_Rgb(C_Light_Dark), 
                               activebackground=Fun_Rgb(C_White),
@@ -2605,7 +2579,7 @@ RdBtn_5 = tkinter.Radiobutton(pesNewProject, bd=0, fg = Fun_Rgb(C_Dark),
                               text="No Filter             ", variable=Var_Filtro, 
                               value=5, indicatoron=0, width = 23, command = lambda: getValuesSliders(5))
 RdBtn_5.config(font = (Font_1,15))
-RdBtn_5.place(x=aux_width_monitor*8, y=aux_height_monitor*7)
+RdBtn_5.place(x=aux_width_monitor*8.2, y=aux_height_monitor*7)
 
 Var_Filtro.get()
 
@@ -2613,7 +2587,7 @@ Var_Filtro.get()
 Lbl_Filtro_2 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                              text = 'Threshold')
 Lbl_Filtro_2.config(font = (Font_1,18))
-Lbl_Filtro_2.place(x=aux_width_monitor*8, y=aux_height_monitor*8)
+Lbl_Filtro_2.place(x=aux_width_monitor*8.2, y=aux_height_monitor*8)
 
 Entr_Umbral = tkinter.Scale(pesNewProject, 
         from_= 0, to=1, resolution=0.01,
@@ -2623,7 +2597,7 @@ Entr_Umbral = tkinter.Scale(pesNewProject,
         showvalue=1, command = getValuesSliders)
 Entr_Umbral.config(font = (Font_1,12))
 Entr_Umbral.set(.5)
-Entr_Umbral.place(x=aux_width_monitor*8, y=aux_height_monitor*8.7)
+Entr_Umbral.place(x=aux_width_monitor*8.2, y=aux_height_monitor*8.7)
 
 Lbl_Filtro_3 = tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                              text = 'Target size')
@@ -2642,7 +2616,7 @@ Entr_Valor_Minimo_Animal.place(x=aux_width_monitor*11.4, y=aux_height_monitor*8.
 lblConfigFileName =  tkinter.Label(pesNewProject, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), 
                              text = 'Config file name')
 lblConfigFileName.config(font = (Font_1,18))
-lblConfigFileName.place(x=aux_width_monitor*8, y=aux_height_monitor*10)
+lblConfigFileName.place(x=aux_width_monitor*8.2, y=aux_height_monitor*10)
 
 auxConfigName = StringVar()
 entConfigFile = Entry(pesNewProject, textvariable = auxConfigName, bd =1, width = 40)
@@ -2671,115 +2645,106 @@ Btn_Cortar_Imagen = tkinter.Button(pesNewProject, bd=0, fg = Fun_Rgb(C_White),
                                   command =saveParameters)
 Btn_Cortar_Imagen.config(font = (Font_1,22))
 Btn_Cortar_Imagen.place(x=aux_width_monitor*12, y=aux_height_monitor*11)
-#%%--------------------WIDGETS TRACK---------------------
+#%%--------------------WIDGETS NOTEBOOK TRACK---------------------
 #%%Canvas notebook Track
 canTracking = Canvas(pesTracking, width=int(width_monitor), height=int(aux_height_monitor*14), bg=Fun_Rgb(C_Primary))
 
 #left side
-canTracking.create_rectangle(int(aux_width_monitor*.7), int(aux_height_monitor*1), 
-                               int(aux_width_monitor*4.75), int(aux_width_monitor*3.2), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
-canTracking.create_rectangle(int(aux_width_monitor*.7), int(aux_height_monitor*7),
-                               int(aux_width_monitor*4.75), int(aux_width_monitor*6.6), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
+canTracking.create_rectangle(int(aux_width_monitor*1), int(aux_height_monitor*1), int(aux_width_monitor*8), int(aux_height_monitor*9), fill=Fun_Rgb(C_Dark), outline=Fun_Rgb(C_White), width=.1)
+
 #right side
-#father
-canTracking.create_rectangle(int(aux_width_monitor*4.9), int(aux_height_monitor*1), 
-                             int(aux_width_monitor*10), int(aux_height_monitor*4), 
-                             fill=Fun_Rgb(C_Light_Dark), outline=Fun_Rgb(C_White), width=.1)
+#father FILES
+canTracking.create_rectangle(int(aux_width_monitor*1), int(aux_height_monitor*9.7), 
+                              int(aux_width_monitor*8), int(aux_height_monitor*12), 
+                              fill=Fun_Rgb(C_Light_Dark), outline=Fun_Rgb(C_White), width=.1)
 #2 childs
-canTracking.create_rectangle(int(aux_width_monitor*5), int(aux_height_monitor*1.1), 
-                            int(aux_width_monitor*9), int(aux_height_monitor*1.8), 
+canTracking.create_rectangle(int(aux_width_monitor*1.1), int(aux_height_monitor*10), 
+                            int(aux_width_monitor*5), int(aux_height_monitor*10.7), 
                             fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
-canTracking.create_rectangle(int(aux_width_monitor*5), int(aux_height_monitor*2.1), 
-                           int(aux_width_monitor*9), int(aux_height_monitor*2.8), 
-                           fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
+canTracking.create_rectangle(int(aux_width_monitor*1.1), int(aux_height_monitor*11), 
+                            int(aux_width_monitor*5), int(aux_height_monitor*11.7), 
+                            fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
 
-#father
-canTracking.create_rectangle(int(aux_width_monitor*4.9), int(aux_height_monitor*5), 
-                             int(aux_width_monitor*10), int(aux_height_monitor*8), 
-                             fill=Fun_Rgb(C_Light_Dark), outline=Fun_Rgb(C_White), width=.1)
+#father Session parameters
+canTracking.create_rectangle(int(aux_width_monitor*8.5), int(aux_height_monitor*7.5), 
+                              int(aux_width_monitor*13.5), int(aux_height_monitor*11), 
+                              fill=Fun_Rgb(C_Light_Dark), outline=Fun_Rgb(C_White), width=.1)
 #child
-canTracking.create_rectangle(int(aux_width_monitor*5), int(aux_height_monitor*5.1), 
-                            int(aux_width_monitor*9.9), int(aux_height_monitor*7.9), 
+canTracking.create_rectangle(int(aux_width_monitor*8.6), int(aux_height_monitor*7.6), 
+                            int(aux_width_monitor*13.4), int(aux_height_monitor*10), 
                             fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
 
-#father
-canTracking.create_rectangle(int(aux_width_monitor*4.9), int(aux_height_monitor*9), 
-                             int(aux_width_monitor*10), int(aux_height_monitor*10), 
-                             fill=Fun_Rgb(C_Light_Dark), outline=Fun_Rgb(C_White), width=.1)
-#child
-canTracking.create_rectangle(int(aux_width_monitor*5), int(aux_height_monitor*9.1), 
-                            int(aux_width_monitor*9.9), int(aux_height_monitor*9.9), 
+canTracking.create_rectangle(int(aux_width_monitor*8.6), int(aux_height_monitor*10.2), 
+                            int(aux_width_monitor*13.4), int(aux_height_monitor*10.9), 
                             fill=Fun_Rgb(C_Primary), outline=Fun_Rgb(C_White), width=1)
-
 canTracking.place(x=0,y=0) 
 
-canShowDataXY = Canvas(canTracking, width=int(aux_height_monitor*5), height=int(aux_height_monitor*5), 
-                       bg=Fun_Rgb(C_White))
-canShowDataXY.place(x=aux_width_monitor*10.5, y=aux_height_monitor*1)
+if theme == 1:
+    canShowDataXY = Canvas(canTracking, width=int(aux_height_monitor*7), height=int(aux_height_monitor*5), 
+                           bg=Fun_Rgb(C_White))
+    canShowDataXY.place(x=aux_width_monitor*8.5, y=aux_height_monitor*1)
+elif theme == 0:
+    canShowDataXY = Canvas(canTracking, width=int(aux_height_monitor*7), height=int(aux_height_monitor*5), 
+                           bg=Fun_Rgb(C_Dark))
+    canShowDataXY.place(x=aux_width_monitor*8.5, y=aux_height_monitor*1)  
 #%%Labels and entries
 #Labels
 lblSetParametersFiles = Label(pesTracking, text="Set tracking parameters", bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
 lblSetParametersFiles.config(font = (Font_1,15))
-lblSetParametersFiles.place(x=aux_width_monitor*5, y=aux_height_monitor*.5)
+lblSetParametersFiles.place(x=aux_width_monitor*1, y=aux_height_monitor*9.1)
 
 lblSetSessionParameters = Label(pesTracking, text="Set session parameters", bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
 lblSetSessionParameters.config(font = (Font_1,15))
-lblSetSessionParameters.place(x=aux_width_monitor*5, y=aux_height_monitor*4.5)
-
-lblSetSessionParameters = Label(pesTracking, text="Set session name", bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
-lblSetSessionParameters.config(font = (Font_1,15))
-lblSetSessionParameters.place(x=aux_width_monitor*5, y=aux_height_monitor*8.5)
+lblSetSessionParameters.place(x=aux_width_monitor*8.5, y=aux_height_monitor*7)
 
 LblSesionTime = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White),  text = 'Time (sec)')
-LblSesionTime.config(font = (Font_1,13))
-LblSesionTime.place(x=aux_width_monitor*5.1, y=aux_height_monitor*5.3)
+LblSesionTime.config(font = (Font_1,15))
+LblSesionTime.place(x=aux_width_monitor*8.7, y=aux_height_monitor*7.7)
 
 LblSujeto = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Subject')
 LblSujeto.config(font = (Font_1,15))
-LblSujeto.place(x=aux_width_monitor*5.1, y=aux_height_monitor*5.9)
+LblSujeto.place(x=aux_width_monitor*8.7, y=aux_height_monitor*8.3)
 
 LblSession = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Session')
 LblSession.config(font = (Font_1,15))
-LblSession.place(x=aux_width_monitor*5.1, y=aux_height_monitor*6.5)
+LblSession.place(x=aux_width_monitor*8.7, y=aux_height_monitor*8.9)
 
 LblGroup = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Group')
 LblGroup.config(font = (Font_1,15))
-LblGroup.place(x=aux_width_monitor*5.1, y=aux_height_monitor*7.1)
+LblGroup.place(x=aux_width_monitor*8.7, y=aux_height_monitor*9.5)
 
-LblSessionName = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Name')
-LblSessionName.config(font = (Font_1,15))
-LblSessionName.place(x=aux_width_monitor*5.1, y=aux_height_monitor*9.3)
-
-Lbl_Save_Text = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Light_Dark), fg = Fun_Rgb(C_White), text = 'Save video')
-Lbl_Save_Text.config(font = (Font_1,15))
-Lbl_Save_Text.place(x=aux_width_monitor*5.2, y = aux_height_monitor*3.1)
+lblSetSessionParameters = Label(pesTracking, text="Session name", bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
+lblSetSessionParameters.config(font = (Font_1,13))
+lblSetSessionParameters.place(x=aux_width_monitor*8.7, y=aux_height_monitor*10.3)
 
 lblConfigFile = Label(pesTracking, text='Config: ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
 lblConfigFile.config(font = (Font_1,15))
-lblConfigFile.place(x=aux_width_monitor*5.1, y=aux_height_monitor*1.2)
+lblConfigFile.place(x=aux_width_monitor*1.2, y=aux_height_monitor*10.1)
+CreateToolTip(lblConfigFile, text='Press button Open')
 
 lblProjectFile = Label(pesTracking, text='Project: ', bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White))
 lblProjectFile.config(font = (Font_1,15))
-lblProjectFile.place(x=aux_width_monitor*5.1, y=aux_height_monitor*2.2)
+lblProjectFile.place(x=aux_width_monitor*1.2, y=aux_height_monitor*11.1)
+CreateToolTip(lblProjectFile, text='Press button Open')
 
 LblPreviewTrack = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Preview')
 LblPreviewTrack.config(font = (Font_1,15))
-LblPreviewTrack.place(x=aux_width_monitor*10.5, y = aux_height_monitor*.5)
+LblPreviewTrack.place(x=aux_width_monitor*8.5, y = aux_height_monitor*.5)
 
-LblAxisX = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Axis X = ')
-LblAxisX.config(font = (Font_1,12))
-LblAxisX.place(x=aux_width_monitor*10.5, y = aux_height_monitor*6.5)
 
-LblAxisY = tkinter.Label(pesTracking, bg = Fun_Rgb(C_Primary), fg = Fun_Rgb(C_White), text = 'Axis Y = ')
-LblAxisY.config(font = (Font_1,12))
-LblAxisY.place(x=aux_width_monitor*13.5, y = aux_height_monitor*3)
+Var_SaveVideo = IntVar()
+Var_ShowPreview = IntVar()
+radBtnSaveVideo = Checkbutton(pesTracking, text="Save video", variable=Var_SaveVideo,
+                              bg = Fun_Rgb(C_Light_Dark),
+                              onvalue=1, offvalue=0)
+radBtnSaveVideo.config(font = (Font_1,15))
+radBtnSaveVideo.place(x=aux_width_monitor*6, y = aux_height_monitor*10)
 
-Var_SaveVideo = tkinter.IntVar(pesTracking)
-radBtnSaveVideo = tkinter.Radiobutton(pesTracking, bg = Fun_Rgb(C_Light_Dark), fg = Fun_Rgb(C_Light_Dark), 
-                                   activebackground=Fun_Rgb(C_Primary),
-                                   highlightbackground=Fun_Rgb(C_Primary), variable=Var_SaveVideo, value=1)
-radBtnSaveVideo.config(font = (Font_1,12))
-radBtnSaveVideo.place(x=aux_width_monitor*5, y = aux_height_monitor*3.1)
+radBtnShowPreview = Checkbutton(pesTracking, text="Show preview", variable=Var_ShowPreview,
+                                bg = Fun_Rgb(C_Light_Dark),
+                                onvalue=1, offvalue=0)
+radBtnShowPreview.config(font = (Font_1,15))
+radBtnShowPreview.place(x=aux_width_monitor*6, y = aux_height_monitor*10.5)
 
 #Entries
 varTime = StringVar()
@@ -2788,54 +2753,54 @@ varSession = StringVar()
 varGroup = StringVar()
 varSessionName = StringVar()
 
-entTime = Entry(pesTracking, textvariable = varTime, bd =1, width = 40)
+entTime = Entry(pesTracking, textvariable = varTime, bd =1, width = 35)
 entTime.config(font = (Font_1,12))
-entTime.place(x=aux_width_monitor*6, y = aux_height_monitor*5.3)
+entTime.place(x=aux_width_monitor*10, y = aux_height_monitor*7.7)
 
-entSubject = Entry(pesTracking, textvariable = varSubject, bd =1, width = 40)
+entSubject = Entry(pesTracking, textvariable = varSubject, bd =1, width = 35)
 entSubject.config(font = (Font_1,12))
-entSubject.place(x=aux_width_monitor*6, y = aux_height_monitor*5.9)
+entSubject.place(x=aux_width_monitor*10, y = aux_height_monitor*8.3)
 
-entSession = Entry(pesTracking, textvariable = varSession, bd =1, width = 40)
+entSession = Entry(pesTracking, textvariable = varSession, bd =1, width = 35)
 entSession.config(font = (Font_1,12))
-entSession.place(x=aux_width_monitor*6, y = aux_height_monitor*6.5)
+entSession.place(x=aux_width_monitor*10, y = aux_height_monitor*8.9)
 
-entGroup = Entry(pesTracking, textvariable = varGroup, bd =1, width = 40)
+entGroup = Entry(pesTracking, textvariable = varGroup, bd =1, width = 35)
 entGroup.config(font = (Font_1,12))
-entGroup.place(x=aux_width_monitor*6, y = aux_height_monitor*7.1)
+entGroup.place(x=aux_width_monitor*10, y = aux_height_monitor*9.5)
 
-entSessionName = Entry(pesTracking, textvariable = varSessionName, bd =1, width = 40)
+entSessionName = Entry(pesTracking, textvariable = varSessionName, bd =1, width = 35)
 entSessionName.config(font = (Font_1,12))
-entSessionName.place(x=aux_width_monitor*6, y = aux_height_monitor*9.3)
+entSessionName.place(x=aux_width_monitor*10, y = aux_height_monitor*10.35)
 
 #Bnt 
 BntTrack = tkinter.Button(pesTracking, bd=0, fg = Fun_Rgb(C_White),
                         bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
                         text = 'Track', highlightbackground = Fun_Rgb(C_Light_Dark), 
                         command =  TrackProject)
-BntTrack.config(font = (Font_1,25))
-BntTrack.place(x=aux_width_monitor*8.5, y = aux_height_monitor*10.5)  
+BntTrack.config(font = (Font_1,20))
+BntTrack.place(x=aux_width_monitor*8.5, y = aux_height_monitor*11.2)  
 
 btnOpenConfigFile = tkinter.Button(pesTracking, bd=0, fg = Fun_Rgb(C_White), 
-                        bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
+                        bg = Fun_Rgb(C_Light_Dark), activebackground=Fun_Rgb(C_Primary),
                         text = 'Open', highlightbackground = Fun_Rgb(C_Light_Dark),
                         command = openConfigFile)
 btnOpenConfigFile.config(font = (Font_1,15))
-btnOpenConfigFile.place(x=aux_width_monitor*9.2, y = aux_height_monitor*1.1)
+btnOpenConfigFile.place(x=aux_width_monitor*5.1, y = aux_height_monitor*10.1)
 
 btnOpenProjectDirectory = tkinter.Button(pesTracking, bd=0, fg = Fun_Rgb(C_White), 
-                        bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
+                        bg = Fun_Rgb(C_Light_Dark), activebackground=Fun_Rgb(C_Primary),
                         text = 'Open', highlightbackground = Fun_Rgb(C_Light_Dark), 
                         command = openProjectDirectoryToTrack)
 btnOpenProjectDirectory.config(font = (Font_1,15))
-btnOpenProjectDirectory.place(x=aux_width_monitor*9.2, y = aux_height_monitor*2.1)   
+btnOpenProjectDirectory.place(x=aux_width_monitor*5.1, y = aux_height_monitor*11.1)   
 
 btnClearCanvas = tkinter.Button(pesTracking, bd=0, fg = Fun_Rgb(C_White), 
                         bg = Fun_Rgb(C_Primary), activebackground=Fun_Rgb(C_Light_Dark),
                         text = 'Clear', highlightbackground = Fun_Rgb(C_Light_Dark), 
                         command = clearCanvas)
 btnClearCanvas.config(font = (Font_1,20))
-btnClearCanvas.place(x=aux_width_monitor*12.5, y = aux_height_monitor*6.3)            
+btnClearCanvas.place(x=aux_width_monitor*12.5, y = aux_height_monitor*5)            
 #%%--------------------MAILOOP---------------------
 #%%Mainloop
 # for i in range(10):
