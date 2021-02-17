@@ -46,7 +46,6 @@ theme = int(arrSettings[0])
 showTextImage = int(arrSettings[1])
 themeAux = theme
 showTextImageAux = showTextImage
-# print(theme, showTextImage, type(showTextImage))
 #%%Colors 
 if theme == 1:
     C_Primary = (21,21,21)
